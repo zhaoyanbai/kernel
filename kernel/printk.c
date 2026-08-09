@@ -86,7 +86,7 @@ int printd(const char* fmtstr, ...) {
 }
 
 extern tty_t* const monitor_tty;
-int printlo(unsigned int xpos, unsigned int ypos, const char* fmtstr, ...) {
+int ap_print(unsigned int xpos, unsigned int ypos, const char* fmtstr, ...) {
     static char plobuf[1024];
 
     va_list args;
