@@ -14,6 +14,39 @@
 #include <tty.h>
 #include <wait.h>
 
+
+#define MAX_CONSOLE_CNT 16
+
+static console_t *console_list[MAX_CONSOLE_CNT] = {NULL};
+
+void register_console(console_t *console) {
+    assert(console != NULL);
+    assert(console->name != NULL);
+    assert(console->write != NULL);
+    //assert(console->setup != NULL);
+
+
+    for (int i=0; i<MAX_CONSOLE_CNT; i++) {
+        if (console_list[i] == console) {
+            return;
+        }
+    }
+
+
+    for (int i=0; i<MAX_CONSOLE_CNT; i++) {
+        if (console_list[i] == NULL) {
+            console_list[i] = console;
+            if(console->setup != NULL) {
+                console->setup(console);
+            }
+            printk("console %s registered\n", console->name);
+            return;
+        }
+    }
+    panic("console list full\n");
+    return;
+}
+
 void vga_putc(unsigned int nr, unsigned char c, const unsigned char color);
 
 cnsl_t cnsl;
