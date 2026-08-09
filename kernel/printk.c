@@ -21,7 +21,7 @@
 
 int vsprintf(char* buf, const char* fmt, va_list args);
 
-void serial_write(const char* buf, size_t size);
+void serial_old_write(const char* buf, size_t size);
 
 extern tty_t* const default_tty;
 
@@ -31,7 +31,7 @@ int _printk(const char* fmtstr, va_list args) {
     int size = vsprintf(pkbuf, fmtstr, args);
 
     tty_write(default_tty, pkbuf, (size_t)size);
-    serial_write(pkbuf, (size_t)size);
+    serial_old_write(pkbuf, (size_t)size);
 
     kfree(pkbuf);
     return 0;
@@ -45,7 +45,7 @@ int _early_printk(const char* fmtstr, va_list args) {
     int size = vsprintf(_early_pkbuf, fmtstr, args);
 
     tty_write(default_tty, _early_pkbuf, (size_t)size);
-    serial_write(_early_pkbuf, (size_t)size);
+    serial_old_write(_early_pkbuf, (size_t)size);
 
     irq_restore(eflags);
     return 0;
@@ -78,7 +78,7 @@ int printd(const char* fmtstr, ...) {
     va_end(args);
 
     tty_write(debug_tty, pdbuf, (size_t)size);
-    serial_write(pdbuf, (size_t)size);
+    serial_old_write(pdbuf, (size_t)size);
 
     kfree(pdbuf);
 

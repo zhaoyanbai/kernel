@@ -8,6 +8,7 @@
  */
 
 #include "io.h"
+#include "console.h"
 
 #define COMM1_PORT 0x3F8
 #define COMM2_PORT 0x2F8
@@ -22,7 +23,14 @@
 
 const uint32_t baud_rate = 115200;
 
-void init_serial() {
+
+int serial_write(const char *buf, size_t size) {
+    return 0;
+}
+
+int serial_setup(console_t *console) {
+    assert(console != NULL);
+
     uint32_t port = SERIAL_PORT;
     outb(0x00, port + 1);  // 禁用中断
     outb(0x80, port + 3);
@@ -31,6 +39,18 @@ void init_serial() {
     outb(0x03, port + 3);
     outb(0xC7, port + 2);
     outb(0x0B, port + 4);
+
+    return 0;
+}
+
+static console_t serial_console = {
+    .name = "SERIAL",
+    .write = serial_write,
+    .setup = serial_setup,
+};
+
+void init_serial() {
+    register_console(&serial_console);
 }
 
 void serial_putc(char c) {
@@ -39,7 +59,7 @@ void serial_putc(char c) {
     outb(c, SERIAL_PORT);
 }
 
-void serial_write(const char* buf, size_t size) {
+void serial_old_write(const char* buf, size_t size) {
     // return 0;
     for (size_t i = 0; i < size; i++) {
         serial_putc(buf[i]);
