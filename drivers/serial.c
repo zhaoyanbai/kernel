@@ -20,11 +20,13 @@
 
 #define SERIAL_PORT COMM1_PORT
 
+const uint32_t baud_rate = 115200;
+
 void init_serial() {
     uint32_t port = SERIAL_PORT;
     outb(0x00, port + 1);  // 禁用中断
     outb(0x80, port + 3);
-    outb(115200 / 9600, port + 0);
+    outb(115200 / baud_rate, port + 0);
     outb(0x00, port + 1);
     outb(0x03, port + 3);
     outb(0xC7, port + 2);
