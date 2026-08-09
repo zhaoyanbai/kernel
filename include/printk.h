@@ -18,12 +18,13 @@
 
 int printk(const char* fmtstr, ...);
 int printd(const char* fmtstr, ...);
-int printlo(unsigned int line, unsigned int offset, const char* fmtstr, ...);
+int ap_print(unsigned int xpos, unsigned int ypos, const char* fmtstr, ...);
 
-#define printl(line, fmt, args...) printlo(1, line, fmt, ##args)
-#define printll(line, fmt, args...) printlo(0, line, fmt, ##args)
-#define printlr(line, fmt, args...) printlo(40, line, fmt, ##args)
-#define printlxy(line, offset, fmt, args...) printlo(offset, line, fmt, ##args)
+#define ap_printl(line, fmt, args...) ap_print(1, line, fmt, ##args)
+#define ap_printll(line, fmt, args...) ap_print(0, line, fmt, ##args)
+#define ap_printlr(line, fmt, args...) ap_print(40, line, fmt, ##args)
+#define ap_printlxy(line, offset, fmt, args...) ap_print(offset, line, fmt, ##args)
+
 
 // monitor print line
 enum {

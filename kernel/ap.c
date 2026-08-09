@@ -225,7 +225,7 @@ void ap_kernel_entry() {
     asm("sti;");
 
     const char* title = "KERNEL MONITOR";
-    printlxy(MPL_TITLE, (80 - strlen(title)) / 2, title);
+    ap_printlxy(MPL_TITLE, (80 - strlen(title)) / 2, title);
 
     void system_monitor();
     system_monitor();
@@ -263,19 +263,19 @@ void _system_monitor() {
     //
     extern volatile uint64_t jiffies;
     // extern volatile uint64_t hpet_ticks;  // jiffies 和 hpet_ticks 是同一个东西
-    printlxy(MPL_IRQ, MPO_HPET, "HPET: %lu", jiffies);
+    ap_printlxy(MPL_IRQ, MPO_HPET, "HPET: %lu", jiffies);
 
     //
     extern volatile uint8_t kbd_scan_code;
     extern volatile uint64_t kbd_irq_cnt;
-    printlxy(MPL_IRQ, MPO_KEYBOARD, "KBD: %02x %lu", kbd_scan_code, kbd_irq_cnt);
+    ap_printlxy(MPL_IRQ, MPO_KEYBOARD, "KBD: %02x %lu", kbd_scan_code, kbd_irq_cnt);
 
     //
-    printlxy(MPL_IRQ, MPO_AP_CLOCK, "AP: %lu", ap_lapic_ticks);
+    ap_printlxy(MPL_IRQ, MPO_AP_CLOCK, "AP: %lu", ap_lapic_ticks);
 
     extern disk_request_queue_t disk_request_queue;
     disk_request_queue_t* drq = &disk_request_queue;
-    printlxy(MPL_IRQ, MPO_DISK, "DISK: %lu/%u/%lu", drq->req_count, drq->pending_count, drq->completed_count);
+    ap_printlxy(MPL_IRQ, MPO_DISK, "DISK: %lu/%u/%lu", drq->req_count, drq->pending_count, drq->completed_count);
 
     //
     void print_all_tasks();
@@ -312,7 +312,7 @@ const char* task_state(unsigned int state) {
 void print_all_tasks() {
     extern task_t* monitor_tasks[];
 
-    printl(MPL_TASK_TITLE, "         NAME      STATE TK/PI REASON     SCHED     KEEP");
+    ap_printl(MPL_TASK_TITLE, "         NAME      STATE TK/PI REASON     SCHED     KEEP");
 
     for (int i = 0; i < 10; i++) {
         task_t* p = monitor_tasks[i];
@@ -321,7 +321,7 @@ void print_all_tasks() {
             continue;
         }
 
-        printl(MPL_TASK_0 + p->pid, "%08x %-6s:%u %s %02d/%02u %-10s %-9u %-9u",
+        ap_printl(MPL_TASK_0 + p->pid, "%08x %-6s:%u %s %02d/%02u %-10s %-9u %-9u",
                p,                     //
                p->name,               //
                p->pid,                //
@@ -345,7 +345,7 @@ void ide_stat_print(ide_pci_controller_t* ide_ctrl) {
     int i = atomic_read(&(ide_ctrl->irq_cnt));
     int c = atomic_read(&(ide_ctrl->consumed_cnt));
     int channel = ide_ctrl->channel;
-    printlxy(MPL_IDE0 + channel, MPO_IDE, "IDE%d req %u irq %u consumed %u", channel, r, i, c);
+    ap_printlxy(MPL_IDE0 + channel, MPO_IDE, "IDE%d req %u irq %u consumed %u", channel, r, i, c);
 }
 
 void print_all_ides() {
