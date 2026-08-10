@@ -132,6 +132,9 @@ void setup_kernel() {
 
     set_printk(_printk);
 
+    void init_vt();
+    init_vt();
+
     init_buffer();
 
     void init_mount();
