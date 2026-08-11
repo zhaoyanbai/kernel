@@ -214,6 +214,7 @@ void tty_putc(tty_t* tty, char c) {
 }
 
 void tty_write(tty_t* tty, const char* buf, size_t size) {
+    return;
     assert(0 != tty);
     if (0 == buf) {
         return;

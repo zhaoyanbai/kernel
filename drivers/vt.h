@@ -11,13 +11,14 @@
 
 #include <console.h>
 
+// 暂不考虑别的类型的VC，直接按VGA来写
+
 typedef struct vc vc_t;
-typedef struct vt vt_t;
-typedef struct vc_backend_t vc_backend_t;
 
-
-#define VC_COUNT 4
-
+// 前面几个给TTY用的VC，后面跟一个给AP用的VC
+#define VC_FOR_TTY_COUNT 2
+#define VC_ID_FOR_AP_ID (VC_FOR_TTY_COUNT)
+#define VC_COUNT (VC_FOR_TTY_COUNT + 1)
 
 enum {
     VT_BLACK = 0,
@@ -30,19 +31,6 @@ enum {
     VT_WHITE = 7,
 };
 
-// typedef uint8_t vt_color_t;
-
-struct vc_backend_t {
-    int (*init)(vc_t *vc);
-    // int (*write)(const char *buf, size_t size);
-    int (*switch)(vc_t *vc);
-    int (*set_vram_addr)(vc_t *vc);
-    int (*save_screen)(vc_t *vc);
-    int (*clear)(vc_t *vc);
-    uint8_t (*build_attr)(vc_t *vc, uint8_t bg_color, uint8_t fg_color, bool blink, bool highlight);
-
-};
- 
 struct vc {
     int id;
 
@@ -52,24 +40,15 @@ struct vc {
     int cols;
     int rows;
 
-    // vt_color_t fg_color;
-    // vt_color_t bg_color;
+    uint8_t default_color;
 
-    vc_backend_t *backend;
+    bool show_cursor;
 
-    uint16_t *vram_addr;
-    uint16_t *vram;
-    size_t vram_size;
-
-    size_t bytes_per_row;
+    uint16_t* vram_vaddr;
 };
 
-
-
-
-// struct vt {
-//     vc_t vcs[VC_COUNT];
-//     vc_t *fg_vc;
-// };
-
-bool vc_is_fg(vc_t *vc);
+bool vc_is_fg_vc(vc_t* vc);
+bool vc_is_view_vc(vc_t* vc);
+vc_t* vt_get_vc(int id);
+vc_t* vt_get_ap_vc();
+void vt_switch(int id);

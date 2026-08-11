@@ -54,6 +54,7 @@ typedef uint32_t paddr_t;
 typedef uint32_t vaddr_t;
 
 typedef int64_t loff_t;
+typedef int32_t off_t;
 
 typedef uint32_t dev_t;
 typedef uint32_t umode_t;
