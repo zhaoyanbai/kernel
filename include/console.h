@@ -14,15 +14,13 @@
 typedef struct console console_t;
 
 struct console {
-    const char *name;
-    int (*setup)(console_t *console);
-    int (*write)(const char *buf, size_t size);
+    const char* name;
+    int (*setup)(console_t* console);
+    int (*write)(const char* buf, size_t size);
 };
 
-void register_console(console_t *console);
-
-
-
+void register_console(console_t* console);
+int console_write(const char* buf, size_t size);
 
 #define CNSL_QUEUE_SIZE 1024
 

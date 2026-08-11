@@ -23,12 +23,27 @@
 
 const uint32_t baud_rate = 115200;
 
+void serial_putc(char c) {
+    while ((inb(SERIAL_PORT + 5) & 0x20) == 0) {
+    }
+    outb(c, SERIAL_PORT);
+}
 
-int serial_write(const char *buf, size_t size) {
+void serial_old_write(const char* buf, size_t size) {
+    // return 0;
+    for (size_t i = 0; i < size; i++) {
+        serial_putc(buf[i]);
+    }
+}
+
+int serial_write(const char* buf, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        serial_putc(buf[i]);
+    }
     return 0;
 }
 
-int serial_setup(console_t *console) {
+int serial_setup(console_t* console) {
     assert(console != NULL);
 
     uint32_t port = SERIAL_PORT;
@@ -51,17 +66,4 @@ static console_t serial_console = {
 
 void init_serial() {
     register_console(&serial_console);
-}
-
-void serial_putc(char c) {
-    while ((inb(SERIAL_PORT + 5) & 0x20) == 0) {
-    }
-    outb(c, SERIAL_PORT);
-}
-
-void serial_old_write(const char* buf, size_t size) {
-    // return 0;
-    for (size_t i = 0; i < size; i++) {
-        serial_putc(buf[i]);
-    }
 }

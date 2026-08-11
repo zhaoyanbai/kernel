@@ -21,6 +21,7 @@
 #include <syscall.h>
 #include <system.h>
 #include <tty.h>
+#include <vt.h>
 
 void reboot();
 void poweroff();
@@ -82,33 +83,50 @@ void kbd_debug(uint8_t scan_code) {
 
     // printd("[%02x]", scan_code);
 
-    if (scan_code == 0x3B) {  // F1
-        tty_switch(default_tty);
-    } else if (scan_code == 0x3C) {  // F2
-        tty_switch(monitor_tty);
-    } else if (scan_code == 0x3D) {  // F3
-        tty_switch(debug_tty);
+    // if (scan_code == 0x3B) {  // F1
+    //     // tty_switch(default_tty);
+    //     vt_switch(0);
+    // } else if (scan_code == 0x3C) {  // F2
+    //     // tty_switch(monitor_tty);
+    //     vt_switch(1);
+    // } else if (scan_code == 0x3D) {  // F3
+    //     // tty_switch(debug_tty);
+    //     vt_switch(2);
+    // }
+
+    switch (scan_code) {
+    case 0x3B:  // F1
+        vt_switch(0);
+        break;
+    case 0x3C:  // F2
+        vt_switch(1);
+        break;
+    case 0x3D:  // F3
+        vt_switch(2);
+        break;
+    default:
+        break;
     }
 
-    if (scan_code == 0x43) {  // F9
-        void ata_test(uint64_t nr);
-        ata_test(0);
-    }
-    if (scan_code == 0x44) {  // F10
-        void ata_send_read_identify_cmd(int dev);
-        ata_send_read_identify_cmd(0);
-    }
+    // if (scan_code == 0x43) {  // F9
+    //     void ata_test(uint64_t nr);
+    //     ata_test(0);
+    // }
+    // if (scan_code == 0x44) {  // F10
+    //     void ata_send_read_identify_cmd(int dev);
+    //     ata_send_read_identify_cmd(0);
+    // }
 
-    if (scan_code == 0x57)  // F11
-    {
-        asm("cli;");
-        while (1)
-            ;
-    }
+    // if (scan_code == 0x57)  // F11
+    // {
+    //     asm("cli;");
+    //     while (1)
+    //         ;
+    // }
 
-    if (scan_code == 0x58) {  // F12
-        tty_switch_to_next();
-    }
+    // if (scan_code == 0x58) {  // F12
+    //     tty_switch_to_next();
+    // }
 
     // ide_status();
 }

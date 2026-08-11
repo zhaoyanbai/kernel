@@ -108,7 +108,7 @@ void parse_framebuffer(void* addr) {
 void check_kernel(unsigned long addr, unsigned long magic) {
     init_serial();
 
-    init_ttys();
+    // init_ttys();
 
     printk("setup gdt\n");
     setup_gdt();
