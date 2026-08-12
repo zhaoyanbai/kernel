@@ -31,9 +31,3 @@ extern void load_cr3(task_t* tsk);
 
 extern list_head_t all_tasks;
 extern list_head_t delay_tasks;
-
-#define set_current_state(st)  \
-    do {                       \
-        current->state = (st); \
-        mb();                  \
-    } while (0)

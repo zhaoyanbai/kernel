@@ -56,26 +56,26 @@ void __wake_up(wait_queue_head_t* head, int nr);
 // 以下wait_event被定义成宏，而不是函数是因为condition
 // condition可能是一个表达式，如果定义成函数，往下传递就直接变成了一个值
 // 如果在某一步这个值变了，并不会反应在这些逻辑判断上
-#define __wait_event(head, condition)                  \
-    do {                                               \
-        DECLARE_WAIT_QUEUE_ENTRY(__wait, current);     \
-        unsigned long flags;                           \
-        while (1) {                                    \
-            irq_save(flags);                           \
-            prepare_to_wait(head, &__wait, TASK_WAIT); \
-            if ((condition)) {                         \
-                __end_wait(&__wait);                   \
-                irq_restore(flags);                    \
-                break;                                 \
-            } else {                                   \
-                irq_restore(flags);                    \
-                void schedule();                       \
-                schedule();                            \
-                irq_save(flags);                       \
-                __end_wait(&__wait);                   \
-                irq_restore(flags);                    \
-            }                                          \
-        }                                              \
+#define __wait_event(head, condition)                    \
+    do {                                                 \
+        DECLARE_WAIT_QUEUE_ENTRY(__wait, current);       \
+        unsigned long flags;                             \
+        while (1) {                                      \
+            irq_save(flags);                             \
+            __prepare_to_wait(head, &__wait, TASK_WAIT); \
+            if ((condition)) {                           \
+                __end_wait(&__wait);                     \
+                irq_restore(flags);                      \
+                break;                                   \
+            } else {                                     \
+                irq_restore(flags);                      \
+                void schedule();                         \
+                schedule();                              \
+                irq_save(flags);                         \
+                __end_wait(&__wait);                     \
+                irq_restore(flags);                      \
+            }                                            \
+        }                                                \
     } while (0)
 
 #define wait_event(head, condition)      \

@@ -32,12 +32,14 @@ volatile void __prepare_to_wait(wait_queue_head_t* head, wait_queue_entry_t* wqe
         // list_add_tail(&wqe->entry, &head->task_list);
         list_add(&wqe->entry, &head->task_list);
     }
-    set_current_state(state);
+
+    assert(state == TASK_WAIT);
+    task_set_wait(current);
     current->reason = "p_wait";
 }
 
 volatile void __end_wait(wait_queue_entry_t* wqe) {
-    set_current_state(TASK_READY);
+    task_set_ready(current);
     current->reason = "e_wait";
     // unsigned long flags;
     // irq_save(flags);
@@ -66,7 +68,8 @@ volatile void __wake_up(wait_queue_head_t* head, int nr) {
     list_for_each_entry_safe(p, tmp, &head->task_list, entry) {
         assert(p->task != NULL);
         // printk("wakeup %s\n", p->task->name);
-        p->task->state = TASK_READY;
+        // p->task->state = TASK_READY;
+        task_set_ready(p->task);
         p->task->reason = "wake_up";
 
         list_del_init(&p->entry);

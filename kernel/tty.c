@@ -133,11 +133,11 @@ int tty_input(tty_t* tty, uint8_t c) {
 
     irq_restore(eflags);
 
-    // 目前先总是回显
-    tty_write(tty, (const char*)&c, 1);
-
     // 唤醒读进程
     wake_up(&tty->ib_wait);
+
+    // 目前先总是回显
+    tty_write(tty, (const char*)&c, 1);
 
     return 1;
 }

@@ -27,7 +27,6 @@ void reboot();
 void poweroff();
 void ide_debug();
 void ide_status();
-void debug_sched();
 
 void kbd_debug(uint8_t scan_code);
 

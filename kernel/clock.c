@@ -58,9 +58,10 @@ void clk_bh_handler(void* arg) {
         assert(p->state == TASK_WAIT);
         assert(p->delay_jiffies != 0);
         if (p->delay_jiffies > 0 && jiffies > p->delay_jiffies) {
-            list_del(&p->pend);
+            list_del_init(&p->pend);
             p->delay_jiffies = 0;
-            p->state = TASK_READY;
+            // p->state = TASK_READY;
+            task_set_ready(p);
             p->reason = "clk_bh";
         }
     }
