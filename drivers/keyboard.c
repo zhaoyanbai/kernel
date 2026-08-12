@@ -51,7 +51,6 @@ char kbd_char_tbl[] = {
     0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,
 };
 
-// TODO 改造成环形缓冲区
 uint8_t kbd_scan_code;
 void kbd_bh_handler(void* arg) {
     kbd_debug(kbd_scan_code);
@@ -65,15 +64,14 @@ void kbd_bh_handler(void* arg) {
     vt_keyboard_input(ch);
 }
 
+uint64_t kbd_irq_cnt = 0;
 void kbd_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
     kbd_scan_code = inb(0x60);
+    kbd_irq_cnt++;
     add_irq_bh_handler(kbd_bh_handler, NULL);
 }
 
-uint64_t kbd_irq_cnt = 0;
 void kbd_debug(uint8_t scan_code) {
-    kbd_irq_cnt++;
-
     switch (scan_code) {
     case 0x01:  // Esc
         break;

@@ -99,7 +99,7 @@ int vsprintf(char* buf, const char* fmt, va_list args) {
             }
             break;
         case 's':
-             p += write_buf(p, (const char*)va_arg(args, char*), char_fill, char_cnt, align);
+            p += write_buf(p, (const char*)va_arg(args, char*), char_fill, char_cnt, align);
             break;
         case 'u':
             itou(tmp, va_arg(args, uint32_t));
