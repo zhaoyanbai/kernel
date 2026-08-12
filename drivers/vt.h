@@ -10,6 +10,7 @@
 #pragma once
 
 #include <console.h>
+#include <tty.h>
 
 // 暂不考虑别的类型的VC，直接按VGA来写
 
@@ -45,6 +46,8 @@ struct vc {
     bool show_cursor;
 
     uint16_t* vram_vaddr;
+
+    tty_t* tty;
 };
 
 bool vc_is_fg_vc(vc_t* vc);
@@ -52,3 +55,9 @@ bool vc_is_view_vc(vc_t* vc);
 vc_t* vt_get_vc(int id);
 vc_t* vt_get_ap_vc();
 void vt_switch(int id);
+
+void vt_keyboard_input(uint8_t c);
+
+void print_kernel_version(const char* version);
+
+extern tty_ops_t vt_tty_ops;
