@@ -32,6 +32,8 @@ int do_fork(pt_regs_t* regs, unsigned long flags) {
     tsk->state = TASK_INITING;
 
     INIT_LIST_HEAD(&tsk->list);
+    INIT_LIST_HEAD(&tsk->ready_list);
+    INIT_LIST_HEAD(&tsk->pend);
     unsigned long iflags;
     irq_save(iflags);
     list_add(&tsk->list, &all_tasks);
@@ -95,7 +97,7 @@ int do_fork(pt_regs_t* regs, unsigned long flags) {
 
     printd("task %08x child_regs esp %08x esp0 %08x\n", tsk, tsk->esp, tsk->esp0);
 
-    tsk->state = TASK_READY;
+    task_set_ready(tsk);
 
     void add_task_for_monitor(task_t * tsk);
     add_task_for_monitor(tsk);

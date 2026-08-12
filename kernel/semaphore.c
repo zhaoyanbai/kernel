@@ -42,7 +42,8 @@ volatile void down(semaphore_t* s) {
         INIT_LIST_HEAD(&waiter.list);
         list_add(&waiter.list, &s->wait_list);
 
-        task->state = TASK_WAIT;
+        // task->state = TASK_WAIT;
+        task_set_wait(task);
         task->reason = "down";
 
         irq_restore(iflags);
@@ -64,7 +65,8 @@ volatile void up(semaphore_t* s) {
         list_del(&waiter->list);
         task_t* task = waiter->task;
 
-        task->state = TASK_READY;
+        // task->state = TASK_READY;
+        task_set_ready(task);
         task->reason = "up";
 
         irq_restore(iflags);

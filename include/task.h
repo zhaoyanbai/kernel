@@ -85,6 +85,8 @@ typedef union task_union {
 
         list_head_t list;  // 所有进程串成一个链表
 
+        list_head_t ready_list;  // 就绪队列
+
         list_head_t pend;  // 某些条件串成一个链表
 
         // list_head_t wait;
@@ -114,14 +116,17 @@ static inline pid_t sysc_getpid() {
     return current->pid;
 }
 
-task_t* find_task(pid_t pid);
-
 #define ROOT_TSK_PID (0)
 
 // #define TASK_INIT_WEIGHT 0
 
 #define get_tsk_from_list(p) list_entry((p), Task, list)
 #define del_tsk_from_list(tsk) list_del((&tsk->list))
-#endif
+
+void task_set_run(task_t* t);
+void task_set_ready(task_t* t);
+void task_set_wait(task_t* t);
+
+#endif  // ASM
 
 #endif  //_TASK_H

@@ -51,7 +51,10 @@ int sysc_wait(int ticks) {
     } else {
         unsigned long flags;
         irq_save(flags);
-        current->state = TASK_WAIT;
+        // current->state = TASK_WAIT;
+        assert(current->state != TASK_WAIT);
+        assert(list_empty(&current->pend));
+        task_set_wait(current);
         current->reason = "sysc_wait";
         current->delay_jiffies = jiffies + ticks;
         list_add(&current->pend, &delay_tasks);

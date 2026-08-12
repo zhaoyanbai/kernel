@@ -46,10 +46,8 @@ void load_cr3(task_t* tsk) {
 
 extern pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
 
-// list_head_t all_tasks;
-// list_head_t delay_tasks;
 LIST_HEAD(all_tasks);
-
+LIST_HEAD(ready_tasks);
 LIST_HEAD(delay_tasks);
 
 void init_root_task() {
@@ -57,7 +55,7 @@ void init_root_task() {
 
     root_task.pid = get_next_pid();
     root_task.ppid = 0;
-    root_task.state = TASK_READY;
+    root_task.state = TASK_RUN;
     root_task.reason = "root";
     root_task.priority = 7;
     root_task.ticks = root_task.priority;
@@ -68,8 +66,12 @@ void init_root_task() {
     root_task.magic = TASK_MAGIC;
     strcpy(root_task.name, "root");
 
-    list_add(&root_task.list, &all_tasks);
+    INIT_LIST_HEAD(&root_task.list);
+    INIT_LIST_HEAD(&root_task.ready_list);
+    INIT_LIST_HEAD(&root_task.pend);
     // INIT_LIST_HEAD(&root_task.next);
+
+    list_add(&root_task.list, &all_tasks);
 
     //  TODO
     // for(i=0; i<NR_OPENS; i++)
@@ -91,6 +93,7 @@ kmem_cache_t* task_t_cache;
 
 void setup_tasks() {
     INIT_LIST_HEAD(&all_tasks);
+    INIT_LIST_HEAD(&ready_tasks);
     INIT_LIST_HEAD(&delay_tasks);
 
     init_root_task();
@@ -131,89 +134,43 @@ void context_switch(task_t* prev, task_t* next) {
         : "memory");
 }
 
-task_t* find_task(pid_t pid) {
-    task_t* p = 0;
-    list_head_t *pos = 0, *tmp = 0;
-
-    unsigned long iflags;
-    irq_save(iflags);
-    list_for_each_safe(pos, tmp, &all_tasks) {
-        p = list_entry(pos, task_t, list);
-        if (p->pid == pid) {
-            break;
-        }
-    }
-    irq_restore(iflags);
-
-    return p;
-}
-
 void schedule() {
-    // task_t* root = &root_task;
-    task_t* sel = 0;
-    task_t* p = 0;
-    list_head_t *pos = 0, *t = 0;
-
-    assert(current->priority <= TASK_MAX_PRIORITY);
-
-    unsigned long iflags;
-    irq_save(iflags);
-
-    if (current->state == TASK_RUN) {
-        current->state = TASK_READY;
-    }
-
-    // task_t *head = current;
-    list_for_each_safe(pos, t, &current->list) {
-        p = list_entry(pos, task_t, list);
-        if (TASK_READY != p->state) {
-            continue;
-        }
-        if (&root_task == p) {
-            continue;
-        }
-
-        sel = p;
-        break;
-    }
-
-    if (sel == 0) {
-        if (current->state != TASK_READY) {
-            sel = &root_task;
-            root_task.ticks = root_task.priority;
-            root_task.state = TASK_READY;
-        } else {
-            sel = current;
-        }
-    }
-
     task_t* prev = current;
-    task_t* next = sel;
+    task_t* next = NULL;
 
-    next->state = TASK_RUN;
-    next->reason = "";
+    unsigned long eflags;
+    irq_save(eflags);
+
+    if (prev->state == TASK_READY || prev->state == TASK_RUN) {
+        task_set_ready(prev);
+    }
+
+    if (list_empty(&ready_tasks)) {
+        next = &root_task;
+        goto end;
+    }
+
+    // 从ready_tasks中选择第一个
+    next = list_entry(ready_tasks.next, task_t, ready_list);
+
+    assert(next->state == TASK_READY);
+    assert(next != &root_task);
+
+end:
+    task_set_run(next);
+
+    if (prev->ticks <= 0) {
+        prev->ticks = prev->priority;
+    }
 
     if (prev != next) {
-        if (prev->ticks <= 0) {
-            prev->ticks = prev->priority;
-        }
         next->sched_cnt++;
         context_switch(prev, next);
     } else {
-        // 这里可能是的情况是任务把时间片ticks用完了
-        // 被设置成READY
-        // 重新高度，还是选中了该任务
         next->sched_keep_cnt++;
     }
 
-    assert(current->state == TASK_RUN);
-
-    irq_restore(iflags);
-}
-
-void debug_sched() {
-    task_t* p = list_entry(current->list.next, task_t, list);
-    p->state = (p->state == TASK_READY) ? TASK_WAIT : TASK_READY;
+    irq_restore(eflags);
 }
 
 task_t* monitor_tasks[1024] = {&root_task, 0};
@@ -221,4 +178,54 @@ void add_task_for_monitor(task_t* tsk) {
     assert(tsk != NULL);
     int id = tsk->pid;
     monitor_tasks[id] = tsk;
+}
+
+void task_set_run(task_t* t) {
+    assert(t != NULL);
+
+    if (t == &root_task) {
+        t->state = TASK_RUN;
+        return;
+    }
+
+    assert(t->state == TASK_READY);
+
+    unsigned long eflags;
+    irq_save(eflags);
+
+    list_del_init(&t->ready_list);
+    t->state = TASK_RUN;
+
+    irq_restore(eflags);
+}
+
+void task_set_ready(task_t* t) {
+    assert(t != NULL);
+    if (t == &root_task) {
+        t->state = TASK_READY;
+        return;
+    }
+
+    unsigned long eflags;
+    irq_save(eflags);
+    if (!list_empty(&t->ready_list)) {
+        list_del_init(&t->ready_list);
+    }
+    list_add_tail(&t->ready_list, &ready_tasks);
+    t->state = TASK_READY;
+    irq_restore(eflags);
+}
+
+void task_set_wait(task_t* t) {
+    assert(t != NULL);
+    // printk("task_set_wait %s %d\n", t->name, t->state);
+    assert(t != &root_task);
+
+    unsigned long eflags;
+    irq_save(eflags);
+
+    list_del_init(&t->ready_list);
+    t->state = TASK_WAIT;
+
+    irq_restore(eflags);
 }
