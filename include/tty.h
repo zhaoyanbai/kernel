@@ -10,6 +10,8 @@
 #pragma once
 
 #include <types.h>
+#include <wait.h>
+#include <semaphore.h>
 
 #define TTY_MAX_NAME_LEN 32
 #define TTY_MAX_COUNT 8
@@ -28,6 +30,8 @@ struct tty {
     uint8_t in_buf[TTY_MAX_IN_BUF_SIZE];
     int ib_head;
     int ib_tail;
+    mutex_t ib_mutex;
+    wait_queue_head_t ib_wait;
 
     tty_ops_t* ops;
     void* private;
