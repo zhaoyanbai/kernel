@@ -17,7 +17,7 @@
 #include <printk.h>
 #include <string.h>
 #include <system.h>
-#include <tty.h>
+#include <vt.h>
 #include <hpet.h>
 
 extern void init_mm();
@@ -37,43 +37,9 @@ extern void setup_fs();
 extern void setup_ext2();
 
 extern void reboot();
-extern void cnsl_init();
 
 #define VERSION "0.3.1"
-const char* version = "KERNEL v" VERSION " @" BUILDER " [" __DATE__ " " __TIME__
-                      "]"
-                      "\n\n";
-
-void print_kernel_version() {
-    //
-    extern tty_t* const default_tty;
-    tty_t* const tty = default_tty;
-
-    int len = strlen(version);
-
-    for (int i = 0; i < tty->max_x; i++) {
-        char c = i < len ? version[i] : ' ';
-        c = c != '\n' ? c : ' ';
-        c = c != '\t' ? c : ' ';
-
-        //
-        uint32_t fg_color = tty->fg_color;
-        uint32_t bg_color = tty->bg_color;
-
-        fg_color = TTY_WHITE | TTY_FG_HIGHLIGHT;
-        bg_color = TTY_CYAN;
-
-        //
-        char* dst = (char*)tty->base_addr;
-
-        //
-        dst[i * 2 + 0] = c;
-        dst[i * 2 + 1] = ((bg_color) << 4) | (fg_color);
-    }
-
-    //
-    printk(version);
-}
+const char* version = "KERNEL v" VERSION " @" BUILDER " [" __DATE__ " " __TIME__ "]";
 
 void prepare_ap_code(paddr_t paddr) {
     // 注意: 最开始时AP是运行在实模式
@@ -146,9 +112,6 @@ void setup_kernel() {
     setup_sysc();
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
-    cnsl_init();
-    boot_delay(DEFAULT_BOOT_DELAY_TICKS);
-
     setup_fs();
 
     setup_tasks();
@@ -163,11 +126,8 @@ void setup_kernel() {
     detect_cpu();
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
-    print_kernel_version();
+    print_kernel_version(version);
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
-
-    // extern tty_t* const monitor_tty;
-    // tty_switch(monitor_tty);
 
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 

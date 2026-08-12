@@ -9,47 +9,41 @@
 
 #pragma once
 
-#define TTY_FG_HIGHLIGHT 0b1000
-#define TTY_BG_BLINK 0b1000
+#include <types.h>
 
-#define TTY_BLACK 0b0000
-#define TTY_BLUE 0b0001
-#define TTY_GREEN 0b0010
-#define TTY_CYAN 0b0011
-#define TTY_RED 0b0100
-#define TTY_PURPLE 0b0101
-#define TTY_YELLOW 0b0110
-#define TTY_WHITE 0b0111
+#define TTY_MAX_NAME_LEN 32
+#define TTY_MAX_COUNT 8
+#define TTY_MAX_IN_BUF_SIZE 512
 
-typedef struct tty {
-    char name[32];
+typedef struct tty tty_t;
+typedef struct tty_ops tty_ops_t;
 
-    // 记录字符显示位置
-    unsigned int xpos;
-    unsigned int ypos;
+struct tty_ops {
+    int (*write)(tty_t* tty, const char* buf, size_t size);
+};
 
-    unsigned int fg_color;
-    unsigned int bg_color;
+struct tty {
+    char name[TTY_MAX_NAME_LEN];
 
-    // 最大字符数
-    int max_x;
-    int max_y;
+    uint8_t in_buf[TTY_MAX_IN_BUF_SIZE];
+    int ib_head;
+    int ib_tail;
 
-    // 记录对应的显存起始位置
-    unsigned long base_addr;
-} tty_t;
+    tty_ops_t* ops;
+    void* private;
+};
 
 void init_ttys();
 
-void tty_write(tty_t* tty, const char* buf, size_t size);
-void tty_write_at(tty_t* tty, int xpos, int ypos, const char* buf, size_t size);
-void tty_color_putc(tty_t* tty, char c, unsigned int fg_color, unsigned bg_color);
+// 进程 -> read -> tty_read -> TTY (buf)
+// 键盘： 键盘中断 -> vt_keyboard_input -> tty_input -> TTY (in_buf)
+//                                          └─echo(回显) -> tty_write -> TTY ops->write -> 键盘 TX
+// 串口 RX： 串口中断 -> serial_input -> tty_input -> TTY (in_buf)
+//                                         └─echo(回显) -> tty_write -> TTY ops->write -> 串口 TX
+// 进程 -> write -> tty_write -> TTY ops->write -> [Serial, VT] write -> 硬件
 
-void tty_set_cursor(tty_t* tty);
-void tty_switch(tty_t* tty);
+int tty_write(tty_t* tty, const char* buf, size_t size);
+int tty_read(tty_t* tty, char* buf, size_t size);
 
-void tty_switch_to_next();
-
-void tty_clear(tty_t* tty);
-
-extern tty_t* current_tty;
+// 返回 1 表示成功，0 表示缓冲区满，丢弃
+int tty_input(tty_t* tty, uint8_t c);

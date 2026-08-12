@@ -8,12 +8,7 @@
  */
 
 #include "vt.h"
-
-void vga_init_vc(vc_t* vc);
-void vga_switch(vc_t* vc);
-void vga_write(vc_t* vc, const char* buf, size_t size);
-uint8_t vga_make_attr(uint8_t fg, uint8_t bg, bool fg_highlight, bool bg_blink);
-void vga_set_cursor_style(bool block);
+#include <vga.h>
 
 static vc_t vcs[VC_COUNT];
 static vc_t* fg_vc = &vcs[0];
@@ -29,13 +24,16 @@ bool vc_is_view_vc(vc_t* vc) {
     return vc == view_vc;
 }
 
+int vt_write(vc_t* vc, const char* buf, size_t size) {
+    return vga_write(vc, buf, size);
+}
+
 // VT CONSOLE: 仅桥接console用
 int vt_console_write(const char* buf, size_t size) {
     // 找到前台vt调用其write
     assert(fg_vc != NULL);
     assert(fg_vc->id < VC_FOR_TTY_COUNT);
-    vga_write(fg_vc, buf, size);
-    return 0;
+    return vt_write(fg_vc, buf, size);
 }
 
 int vt_console_setup(console_t* console) {
@@ -111,3 +109,45 @@ void init_vt() {
 
     register_console(&vt_console);
 }
+
+void vt_keyboard_input(uint8_t c) {
+    assert(fg_vc != NULL);
+    assert(fg_vc->id < VC_FOR_TTY_COUNT);
+
+    tty_t* tty = fg_vc->tty;
+    assert(tty != NULL);
+
+    tty_input(tty, c);
+}
+
+void print_kernel_version(const char* version) {
+    vc_t* vc = vt_get_vc(0);
+    uint8_t color = vt_make_attr(VT_WHITE, VT_CYAN, true, false);
+
+    // 清理第一行
+    for (int i = 0; i < vc->cols; i++) {
+        uint16_t c = (color << 8) | ' ';
+        vc->vram_vaddr[i] = c;
+    }
+
+    // 打印版本号
+    for (int i = 0; i < strlen(version); i++) {
+        uint16_t c = (color << 8) | version[i];
+        vc->vram_vaddr[i] = c;
+    }
+}
+
+int vt_tty_write(tty_t* tty, const char* buf, size_t size) {
+    assert(tty != NULL);
+
+    vc_t* vc = tty->private;
+    assert(vc != NULL);
+
+    return vt_write(vc, buf, size);
+
+    return 0;
+}
+
+tty_ops_t vt_tty_ops = {
+    .write = vt_tty_write,
+};

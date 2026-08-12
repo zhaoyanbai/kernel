@@ -8,28 +8,11 @@
  */
 
 #include "vt.h"
+#include <vga.h>
 #include <io.h>
 #include <irq.h>
 
-static const paddr_t vga_vram_base_paddr = 0xB8000;
 static uint16_t* vga_vram_base_vaddr = (uint16_t*)pa2va(vga_vram_base_paddr);
-static const size_t vga_cols = 80;
-static const size_t vga_rows = 25;
-static const size_t vga_vram_size = vga_cols * vga_rows;
-static const size_t vga_vram_byte_size = vga_vram_size * sizeof(uint16_t);
-static const size_t TAB_SPACE = 4;
-
-#define VGA_FG_HIGHLIGHT 0b1000
-#define VGA_BG_BLINK 0b1000
-
-#define VGA_BLACK 0b0000
-#define VGA_BLUE 0b0001
-#define VGA_GREEN 0b0010
-#define VGA_CYAN 0b0011
-#define VGA_RED 0b0100
-#define VGA_PURPLE 0b0101
-#define VGA_YELLOW 0b0110
-#define VGA_WHITE 0b0111
 
 uint8_t vga_make_attr(uint8_t fg, uint8_t bg, bool fg_highlight, bool bg_blink) {
     assert((fg & 0x7) == fg);
@@ -104,7 +87,10 @@ void vga_scroll_up(vc_t* vc) {
 
     uint16_t* vram_vaddr = vc->vram_vaddr;
 
-    for (int i = 0; i < ((vc->rows - 1) * vc->cols); i++) {
+    // 如果是VC0则最顶上一行保留用来显示内核版本及编译时间信息
+    const int keep = vc->id == 0 ? vc->cols : 0;
+
+    for (int i = keep; i < ((vc->rows - 1) * vc->cols); i++) {
         vram_vaddr[i] = vram_vaddr[i + vc->cols];
     }
 
@@ -303,11 +289,13 @@ void vga_putc(vc_t* vc, uint8_t c) {
     vga_color_putc(vc, c, vc->default_color);
 }
 
-void vga_write(vc_t* vc, const char* buf, size_t size) {
+int vga_write(vc_t* vc, const char* buf, size_t size) {
     assert(buf != NULL);
     for (size_t i = 0; i < size; i++) {
         vga_putc(vc, buf[i]);
     }
+
+    return size;
 }
 
 void vga_ap_clear() {

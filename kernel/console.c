@@ -56,7 +56,7 @@ int console_write(const char* buf, size_t size) {
     return 0;
 }
 
-void vga_putc(unsigned int nr, unsigned char c, const unsigned char color);
+#if 0
 
 cnsl_t cnsl;
 
@@ -201,3 +201,4 @@ end:
 }
 
 chrdev_t cnsl_chrdev = {.read = cnsl_read};
+#endif
