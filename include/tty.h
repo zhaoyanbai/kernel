@@ -10,7 +10,7 @@
 #pragma once
 
 #include <types.h>
-#include <wait.h>
+#include <sync.h>
 #include <semaphore.h>
 
 #define TTY_MAX_NAME_LEN 32
@@ -31,7 +31,7 @@ struct tty {
     int ib_head;
     int ib_tail;
     mutex_t ib_mutex;
-    wait_queue_head_t ib_wait;
+    waitq_t ib_wait;
 
     tty_ops_t* ops;
     void* private;

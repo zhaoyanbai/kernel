@@ -26,7 +26,7 @@ typedef struct bbuffer_store {
     int blocksize;
     // list_head_t cache_list;
     list_head_t free_list;
-    wait_queue_head_t waitq;
+    waitq_t waitq;
 } bbuffer_store_t;
 
 // 1024, 2048, 4096
@@ -128,7 +128,7 @@ again:
         // wait on free list
         // TODO
         assert(0);
-        // wait_on(&s->waitq);
+        // waitq_sleep(&s->waitq);
         goto again;
     }
 
@@ -141,7 +141,7 @@ again:
     // 虽然此时该bbuffer_t上的ref_count为0但其可能还有I/O操作没有完成
     // 因为可能有的进程调用了write、read后再直接调用brelse
     // 所以需要在此等待其结束
-    wait_completion(&b->io_done);
+    completion_wait(&b->io_done);
 
     // 找到了
     b->block = block;
@@ -157,7 +157,7 @@ void brelse(bbuffer_t* b) {
     assert(b != NULL);
     assert(atomic_read(&(b->ref_count)) > 0);
 
-    wait_completion(&b->io_done);
+    completion_wait(&b->io_done);
 
     bbuffer_store_t* s = getstore(b->block_size);
     assert(s != NULL);
@@ -165,7 +165,7 @@ void brelse(bbuffer_t* b) {
 
     // TODO
     assert(0);
-    // wake_up(&s->waitq);
+    // waitq_wakeup_all(&s->waitq);
 }
 
 bbuffer_t* bread(dev_t dev, uint64_t block, uint32_t size) {
@@ -182,7 +182,7 @@ bbuffer_t* bread(dev_t dev, uint64_t block, uint32_t size) {
     block_read(b);
 
     // 等待I/O结束
-    wait_completion(&b->io_done);
+    completion_wait(&b->io_done);
     if (b->uptodate == 1) {
         return b;
     }
@@ -211,7 +211,7 @@ void init_buffer() {
         store[i].blocksize = blocksize;
         // list_init(&store[i].cache_list);
         list_init(&store[i].free_list);
-        init_wait_queue_head(&store[i].waitq);
+        waitq_init(&store[i].waitq);
 
         int page_left_space = 0;
         void* data = NULL;
@@ -237,8 +237,8 @@ void init_buffer() {
             b->dev = 0;
             b->page = page;
             b->uptodate = 0;
-            init_completion(&b->io_done);
-            complete(&b->io_done);
+            completion_init(&b->io_done);
+            completion_complete(&b->io_done);
             list_init(&b->node);
 
             assert(NULL != b->data);

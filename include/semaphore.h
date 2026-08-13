@@ -11,25 +11,25 @@
 
 #include <list.h>
 
-typedef struct semaphore {
+typedef struct deprecated_semaphore {
     volatile unsigned int cnt;
     list_head_t wait_list;
-} semaphore_t;
+} deprecated_semaphore_t;
 
 #define SEMAPHORE_INITIALIZER(name, n) {.cnt = (n), .wait_list = LIST_HEAD_INIT((name).wait_list)}
 
-void semaphore_init(semaphore_t* s, unsigned int v);
+void deprecated_semaphore_init(deprecated_semaphore_t* s, unsigned int v);
 
 // down
 // 如果s->cnt > 0不会立即重新调度进程
 // 如果s->cnt == 0 会重新调度进程
-volatile void down(semaphore_t* s);
+volatile void down(deprecated_semaphore_t* s);
 
 // up
 // 只会唤醒进程，但不会立即重新调度进程
-volatile void up(semaphore_t* s);
+volatile void up(deprecated_semaphore_t* s);
 
-typedef semaphore_t mutex_t;
+typedef deprecated_semaphore_t deprecated_mutex_t;
 
 #define MUTEX_INITIALIZER(name) {.cnt = (1), .wait_list = LIST_HEAD_INIT((name).wait_list)}
 
@@ -40,6 +40,6 @@ typedef semaphore_t mutex_t;
         (ptr)->cnt = 1;                      \
         INIT_LIST_HEAD(&((ptr)->wait_list)); \
     } while (0)
-void mutex_init(mutex_t*);
-void mutex_lock(mutex_t*);
-void mutex_unlock(mutex_t*);
+void deprecated_mutex_init(deprecated_mutex_t*);
+void deprecated_mutex_lock(deprecated_mutex_t*);
+void deprecated_mutex_unlock(deprecated_mutex_t*);

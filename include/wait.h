@@ -78,10 +78,10 @@ void __wake_up(wait_queue_head_t* head, int nr);
         }                                                \
     } while (0)
 
-#define wait_event(head, condition)      \
-    do {                                 \
-        if ((condition)) {               \
-            break;                       \
-        }                                \
-        __wait_event(head, (condition)); \
+#define deprecated_wait_event(head, condition) \
+    do {                                       \
+        if ((condition)) {                     \
+            break;                             \
+        }                                      \
+        __wait_event(head, (condition));       \
     } while (0)

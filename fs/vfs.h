@@ -12,7 +12,7 @@
 #include <atomic.h>
 #include <list.h>
 #include <page.h>
-#include <semaphore.h>
+#include <sync.h>
 #include <types.h>
 
 typedef struct qstr {

@@ -11,7 +11,7 @@
 
 #include <ahci.h>
 #include <types.h>
-#include <completion.h>
+#include <sync.h>
 
 #define SATA_SIGNATURE_ATA 0x00000101
 #define SATA_SIGNATURE_ATAPI 0xEB140101

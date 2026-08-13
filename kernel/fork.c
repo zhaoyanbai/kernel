@@ -33,6 +33,7 @@ int do_fork(pt_regs_t* regs, unsigned long flags) {
 
     INIT_LIST_HEAD(&tsk->list);
     INIT_LIST_HEAD(&tsk->ready_list);
+    INIT_LIST_HEAD(&tsk->waitq_list);
     INIT_LIST_HEAD(&tsk->pend);
     unsigned long iflags;
     irq_save(iflags);

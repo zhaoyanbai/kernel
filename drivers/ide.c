@@ -9,9 +9,8 @@
 
 #include <ide.h>
 #include <irq.h>
-#include <semaphore.h>
+#include <sync.h>
 #include <task.h>
-#include <wait.h>
 
 /*
 高技术配置（英语：Advanced Technology Attachment，简称“ATA”）与由集成驱动电子设备（英语：Integrated Drive
@@ -127,7 +126,7 @@ void ide_irq_bh_handler(void* arg) {
     // 所以就移除了up()里的 schedule()
     // 后来就改用完成量来通知磁盘任务，就不存在这个问题了
     // complete会唤醒进程，但不会立即重新调度进程
-    complete(&ide_ctrl->intr_complete);
+    completion_complete(&ide_ctrl->intr_complete);
 }
 
 void ide_irq_handler(unsigned int irq, pt_regs_t* regs, void* devid) {
@@ -178,11 +177,12 @@ void ide_pci_init(pci_device_t* pci) {
     uint32_t iobase = pci->bars[4] & 0xFFFFFFFE;  // 最低为0是内存地址为1是端口地址
 
     for (int i = 0; i < NR_IDE_CONTROLLER; i++) {
-        INIT_MUTEX(&ide_pci_controller[i].request_mutex);
+        // INIT_MUTEX(&ide_pci_controller[i].request_mutex);
+        mutex_init(&ide_pci_controller[i].request_mutex);
         ide_pci_controller[i].request_queue.count = 0;
         INIT_LIST_HEAD(&ide_pci_controller[i].request_queue.list);
         semaphore_init(&ide_pci_controller[i].request_queue.sem, 0);
-        init_completion(&ide_pci_controller[i].intr_complete);
+        completion_init(&ide_pci_controller[i].intr_complete);
         ide_pci_controller[i].intr_complete.name = i == 0 ? "ide0_intr_complete" : "ide1_intr_complete";
 
         atomic_set(&ide_pci_controller[i].request_cnt, 0);

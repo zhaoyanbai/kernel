@@ -8,7 +8,7 @@
  */
 
 #include <disk.h>
-#include <completion.h>
+#include <sync.h>
 #include <sata.h>
 // #include
 
@@ -31,7 +31,7 @@ int send_disk_request(disk_request_t* req) {
         assert(((((uint32_t)req->buf) & (_64K - 1)) + size) <= _64K);
     }
 
-    init_completion(&req->completion);
+    completion_init(&req->completion);
 
     //
     mutex_lock(&disk_request_queue.mutex);
@@ -41,10 +41,10 @@ int send_disk_request(disk_request_t* req) {
     mutex_unlock(&disk_request_queue.mutex);
 
     //
-    up(&disk_request_queue.sem);
+    semaphore_up(&disk_request_queue.sem);
 
     //
-    wait_completion(&req->completion);
+    completion_wait(&req->completion);
 
     return 0;
 }
@@ -58,16 +58,16 @@ void disk_request(disk_request_t* req) {
     sata_device_t* sata = &sata_devices[0];
 
     //
-    init_completion(&sata->completion);
+    completion_init(&sata->completion);
 
     sata_dma_read(sata, req->pos, req->count, (vaddr_t)req->buf);
 
-    wait_completion(&sata->completion);
+    completion_wait(&sata->completion);
 }
 
 void disk_task_entry() {
     while (1) {
-        down(&disk_request_queue.sem);
+        semaphore_down(&disk_request_queue.sem);
 
         for (int i = 0; i < 123; i++) {
             asm("hlt");
@@ -84,7 +84,7 @@ void disk_task_entry() {
         disk_request(req);
 
         //
-        complete(&req->completion);
+        completion_complete(&req->completion);
 
         disk_request_queue.completed_count++;  // 不需要保护
 

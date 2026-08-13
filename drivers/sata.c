@@ -34,7 +34,7 @@ void init_sata_device(ahci_hba_t* hba, ahci_port_t* port, int port_index) {
     sata->index = index;
     sata->port_index = port_index;
 
-    init_completion(&sata->completion);
+    completion_init(&sata->completion);
 
     printk("ahci port clb %08x fb %08x sata_status 0x%08X signature %08X\n", port->cmd_list_base, port->fis_base,
            port->sata_status, port->signature);
@@ -127,7 +127,7 @@ void sata_irq_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
             //
         }
 
-        complete(&sata->completion);
+        completion_complete(&sata->completion);
 
         port->interrupt_status = interrupt_status;
     }

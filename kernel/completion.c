@@ -10,7 +10,7 @@
 #include <completion.h>
 #include <sched.h>
 
-void wait_completion(completion_t* x) {
+void wait_deprecated_completion(deprecated_completion_t* x) {
     uint32_t eflags;
     DECLARE_WAIT_QUEUE_ENTRY(__wait, current);
 
@@ -33,7 +33,7 @@ void wait_completion(completion_t* x) {
     }
 }
 
-void complete(completion_t* x) {
+void complete(deprecated_completion_t* x) {
     uint32_t iflags;
     irq_save(iflags);
     x->done++;
@@ -41,7 +41,7 @@ void complete(completion_t* x) {
     irq_restore(iflags);
 }
 
-void init_completion(completion_t* x) {
+void init_deprecated_completion(deprecated_completion_t* x) {
     x->done = 0;
     init_wait_queue_head(&x->wait);
 

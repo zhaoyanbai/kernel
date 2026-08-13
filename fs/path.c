@@ -361,7 +361,7 @@ int path_lookup_create(namei_t* ni, dentry_t** dentry) {
     int err = 0;
 
     // 在调用完path_lookup_create后调用 up 操作
-    down(&ni->path.dentry->d_inode->i_sem);
+    semaphore_down(&ni->path.dentry->d_inode->i_sem);
 
     //
     if (ni->last_type != LAST_NORMAL) {
@@ -405,18 +405,18 @@ int path_open_namei(const char* path, int flags, int mode, namei_t* ni) {
 
     dir = ni->path.dentry;
     assert(NULL != dir);
-    down(&dir->d_inode->i_sem);
+    semaphore_down(&dir->d_inode->i_sem);
 
     ret = path_lookup_hash(dir, &ni->last, &dentry);
     if (0 != ret) {
-        up(&dir->d_inode->i_sem);
+        semaphore_up(&dir->d_inode->i_sem);
         goto end;
     }
 
     assert(dentry != NULL);
     if (NULL == dentry->d_inode) {
         ret = vfs_create(dir->d_inode, dentry, mode, ni);
-        up(&dir->d_inode->i_sem);
+        semaphore_up(&dir->d_inode->i_sem);
         dentry_put(ni->path.dentry);
         ni->path.dentry = dentry;
         if (0 != ret) {
@@ -427,7 +427,7 @@ int path_open_namei(const char* path, int flags, int mode, namei_t* ni) {
 
     // 上述是文件不存在的逻辑
     // 此处是文件存在的情况下的处理逻辑
-    up(&dir->d_inode->i_sem);
+    semaphore_up(&dir->d_inode->i_sem);
 
     if ((flags & O_EXCL) == 0) {
         panic("unsupport O_EXCL");

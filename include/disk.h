@@ -13,7 +13,7 @@
 #include <completion.h>
 #include <fs.h>
 #include <list.h>
-#include <semaphore.h>
+#include <sync.h>
 
 typedef enum {
     DISK_REQ_IDENTIFY,

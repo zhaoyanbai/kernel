@@ -14,7 +14,6 @@
 #include <disk.h>
 #include <io.h>
 #include <pci.h>
-#include <semaphore.h>
 #include <system.h>
 #include <task.h>
 

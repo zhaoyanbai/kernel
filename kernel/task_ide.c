@@ -7,7 +7,7 @@
  * ------------------------------------------------------------------------
  */
 
-#include <completion.h>
+#include <sync.h>
 #include <disk.h>
 #include <ide.h>
 #include <sched.h>
@@ -117,7 +117,7 @@ void disk_task_entry(void* arg) {
         }
 
         const bool pio_mode = false;
-        init_completion(&ide_ctrl->intr_complete);
+        completion_init(&ide_ctrl->intr_complete);
 
         switch (r->command) {
         case DISK_REQ_IDENTIFY:
@@ -152,7 +152,7 @@ void disk_task_entry(void* arg) {
         int ret = 0;
         if (!pio_mode) {
             // 等待硬盘中断
-            wait_completion(&ide_ctrl->intr_complete);
+            completion_wail(&ide_ctrl->intr_complete);
 
             if ((ide_ctrl->status & (ATA_STATUS_BSY | ATA_STATUS_BSY | ATA_STATUS_WF)) != 0) {
                 printk("IDE status %02X error for drv %u pos %lu count %u\n", ide_ctrl->status, drvid, pos, r->count);
@@ -167,7 +167,7 @@ void disk_task_entry(void* arg) {
 
         if (r->bb != 0) {
             r->bb->uptodate = 1;
-            complete(&r->bb->io_done);
+            completion_complete(&r->bb->io_done);
         }
 
         r->ret = ret;

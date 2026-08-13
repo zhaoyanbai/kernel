@@ -10,7 +10,7 @@
 #pragma once
 
 #include <atomic.h>
-#include <completion.h>
+#include <sync.h>
 #include <fs.h>
 #include <mm.h>
 #include <page.h>
