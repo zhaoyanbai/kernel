@@ -14,7 +14,6 @@
 #include <printk.h>
 #include <sched.h>
 #include <system.h>
-#include <wait.h>
 
 volatile uint64_t jiffies = 0;  // TODO uint64: undefined reference to `__umoddi3'
 

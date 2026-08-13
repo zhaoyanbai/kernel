@@ -9,6 +9,8 @@
 
 #include "vt.h"
 #include <vga.h>
+#include <assert.h>
+#include <string.h>
 
 static vc_t vcs[VC_COUNT];
 static vc_t* fg_vc = &vcs[0];

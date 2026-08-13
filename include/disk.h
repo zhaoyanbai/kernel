@@ -10,7 +10,6 @@
 #pragma once
 
 #include <buffer.h>
-#include <completion.h>
 #include <fs.h>
 #include <list.h>
 #include <sync.h>
