@@ -16,8 +16,6 @@
 
 #include "sched.h"
 
-#include <wait.h>
-
 #include "assert.h"
 #include "linkage.h"
 #include "mm.h"

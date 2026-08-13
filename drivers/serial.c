@@ -9,6 +9,7 @@
 
 #include "io.h"
 #include "console.h"
+#include <assert.h>
 
 #define COMM1_PORT 0x3F8
 #define COMM2_PORT 0x2F8

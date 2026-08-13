@@ -12,7 +12,6 @@
 
 #include <sched.h>
 #include <system.h>
-#include <wait.h>
 
 int sysc_exit(int status) {
     unsigned long flags;

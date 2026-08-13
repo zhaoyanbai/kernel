@@ -22,6 +22,7 @@
 #include <system.h>
 #include <tty.h>
 #include <vt.h>
+#include <irq.h>
 
 void reboot();
 void poweroff();

@@ -9,10 +9,8 @@
 
 #include <console.h>
 #include <sched.h>
-#include <semaphore.h>
 #include <string.h>
 #include <tty.h>
-#include <wait.h>
 
 #define MAX_CONSOLE_CNT 16
 

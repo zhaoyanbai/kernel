@@ -11,7 +11,6 @@
 
 #include <types.h>
 #include <sync.h>
-#include <semaphore.h>
 
 #define TTY_MAX_NAME_LEN 32
 #define TTY_MAX_COUNT 8
