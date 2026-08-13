@@ -14,12 +14,9 @@
 #include <printk.h>
 #include <sched.h>
 #include <system.h>
+#include <timer.h>
 
 volatile uint64_t jiffies = 0;  // TODO uint64: undefined reference to `__umoddi3'
-
-unsigned int sys_clock() {
-    return jiffies;
-}
 
 void clk_bh_handler(void* arg);
 
@@ -46,24 +43,8 @@ void clk_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
 
 // 开中断执行这个函数
 // 后续放到一个内核任务中去做，需要先把禁止内核抢占做了
-const char* task_state(unsigned int state);
 void clk_bh_handler(void* arg) {
-    task_t* p = 0;
-    list_head_t* t = 0;
-    list_head_t* pos = 0;
-    list_for_each_safe(pos, t, &delay_tasks) {
-        p = list_entry(pos, task_t, pend);
-        // printk("%s state: %s\n", p->name, task_state(p->state));
-        assert(p->state == TASK_WAIT);
-        assert(p->delay_jiffies != 0);
-        if (p->delay_jiffies > 0 && jiffies > p->delay_jiffies) {
-            list_del_init(&p->pend);
-            p->delay_jiffies = 0;
-            // p->state = TASK_READY;
-            task_set_ready(p);
-            p->reason = "clk_bh";
-        }
-    }
+    timer_run_expired_timers();
 }
 
 uint16_t read_i8254_counter(uint8_t counter_no) {

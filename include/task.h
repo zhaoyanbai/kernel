@@ -83,20 +83,12 @@ typedef union task_union {
 
         vm_area_t* vma_list;
 
-        list_head_t list;  // 所有进程串成一个链表
-
+        list_head_t list;        // 所有进程串成一个链表
         list_head_t ready_list;  // 就绪队列
-
         list_head_t waitq_list;
-
-        list_head_t pend;  // 某些条件串成一个链表
-
-        // list_head_t wait;
 
         uint32_t sched_cnt;       // 被调度换上CPU的次数
         uint32_t sched_keep_cnt;  // 时间片到了，但是没有被换出，又重新执行的次数
-
-        uint64_t delay_jiffies;  // debug only
 
         uint64_t magic;  // 栈溢出标志
     };
@@ -128,6 +120,8 @@ static inline pid_t sysc_getpid() {
 void task_set_run(task_t* t);
 void task_set_ready(task_t* t);
 void task_set_wait(task_t* t);
+
+void task_init_lists(task_t* t);
 
 #endif  // ASM
 
