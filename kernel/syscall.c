@@ -18,6 +18,8 @@
 #include "msr.h"
 #include "sched.h"
 #include "system.h"
+#include "timer.h"
+#include "clock.h"
 
 extern void syscall_entry();
 extern void init_sysc_handler_table();
@@ -39,7 +41,10 @@ int sysc_none() {
     return 0;
 }
 
-extern uint64_t jiffies;
+static void timer_waitq_wakeup_one_cb(void* arg) {
+    waitq_t* waitq = (waitq_t*)arg;
+    waitq_wakeup_one(waitq);
+}
 
 // 特别说明：如果想把这个函数的参数ticks改为int64_t
 // 那么就需要在编写用户级的系统调用库函数的时候注意
@@ -51,16 +56,22 @@ int sysc_wait(int ticks) {
     } else {
         unsigned long flags;
         irq_save(flags);
-        // current->state = TASK_WAIT;
         assert(current->state != TASK_WAIT);
-        assert(list_empty(&current->pend));
-        task_set_wait(current);
-        current->reason = "sysc_wait";
-        current->delay_jiffies = jiffies + ticks;
-        list_add(&current->pend, &delay_tasks);
+
+        waitq_t waitq;
+        waitq_init(&waitq);
+
+        timer_t timer;
+        timer_init(&timer, jiffies + ticks, timer_waitq_wakeup_one_cb, &waitq);
+        timer_add(&timer);
+
+        waitq_sleep(&waitq);
+
+        timer_del(&timer);
+
         irq_restore(flags);
     }
-    schedule();
+
     return 0;
 }
 

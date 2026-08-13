@@ -20,6 +20,7 @@
 #include <irq.h>
 #include <system.h>
 #include <task.h>
+#include <clock.h>
 
 irq_desc_t irq_desc[NR_IRQS];
 irq_bh_action_t* irq_bh_actions = NULL;
@@ -107,12 +108,10 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t* regs) {
 #endif
 }
 
-extern uint32_t jiffies;
-
 volatile bool enable_clock_irq_delay = false;
 
 void irq_bh_handler() {
-    uint32_t end = jiffies + 1;
+    uint64_t end = jiffies + 1;
 
 // ENABLE_CLOCK_IRQ_WAIT是用来调试的
 // 是为了让时钟减缓进程的时间片更慢一点，以便于调试

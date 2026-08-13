@@ -31,10 +31,8 @@ int do_fork(pt_regs_t* regs, unsigned long flags) {
 
     tsk->state = TASK_INITING;
 
-    INIT_LIST_HEAD(&tsk->list);
-    INIT_LIST_HEAD(&tsk->ready_list);
-    INIT_LIST_HEAD(&tsk->waitq_list);
-    INIT_LIST_HEAD(&tsk->pend);
+    task_init_lists(tsk);
+
     unsigned long iflags;
     irq_save(iflags);
     list_add(&tsk->list, &all_tasks);

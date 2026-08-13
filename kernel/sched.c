@@ -46,7 +46,6 @@ extern pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAG
 
 LIST_HEAD(all_tasks);
 LIST_HEAD(ready_tasks);
-LIST_HEAD(delay_tasks);
 
 void init_root_task() {
     int i;
@@ -64,10 +63,7 @@ void init_root_task() {
     root_task.magic = TASK_MAGIC;
     strcpy(root_task.name, "root");
 
-    INIT_LIST_HEAD(&root_task.list);
-    INIT_LIST_HEAD(&root_task.ready_list);
-    INIT_LIST_HEAD(&root_task.pend);
-    // INIT_LIST_HEAD(&root_task.next);
+    task_init_lists(&root_task);
 
     list_add(&root_task.list, &all_tasks);
 
@@ -92,7 +88,6 @@ kmem_cache_t* task_t_cache;
 void setup_tasks() {
     INIT_LIST_HEAD(&all_tasks);
     INIT_LIST_HEAD(&ready_tasks);
-    INIT_LIST_HEAD(&delay_tasks);
 
     init_root_task();
 
@@ -226,4 +221,12 @@ void task_set_wait(task_t* t) {
     t->state = TASK_WAIT;
 
     irq_restore(eflags);
+}
+
+void task_init_lists(task_t* t) {
+    assert(t != NULL);
+
+    INIT_LIST_HEAD(&t->list);
+    INIT_LIST_HEAD(&t->ready_list);
+    INIT_LIST_HEAD(&t->waitq_list);
 }
