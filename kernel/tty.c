@@ -30,7 +30,7 @@ void init_ttys() {
         tty->ib_head = 0;
         tty->ib_tail = 0;
         mutex_init(&tty->ib_mutex);
-        init_wait_queue_head(&tty->ib_wait);
+        waitq_init(&tty->ib_wait);
 
         tty->ops = &vt_tty_ops;
 
@@ -134,7 +134,7 @@ int tty_input(tty_t* tty, uint8_t c) {
     irq_restore(eflags);
 
     // 唤醒读进程
-    wake_up(&tty->ib_wait);
+    waitq_wakeup_all(&tty->ib_wait);
 
     // 目前先总是回显
     tty_write(tty, (const char*)&c, 1);

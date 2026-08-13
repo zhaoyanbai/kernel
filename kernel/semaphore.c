@@ -23,12 +23,12 @@ typedef struct semaphore_waiter {
 
 } semaphore_waiter_t;
 
-void semaphore_init(semaphore_t* s, unsigned int v) {
+void deprecated_semaphore_init(deprecated_semaphore_t* s, unsigned int v) {
     s->cnt = v;
     INIT_LIST_HEAD(&(s->wait_list));
 }
 
-volatile void down(semaphore_t* s) {
+volatile void down(deprecated_semaphore_t* s) {
     unsigned long iflags;
     irq_save(iflags);
 
@@ -52,7 +52,7 @@ volatile void down(semaphore_t* s) {
     }
 }
 
-volatile void up(semaphore_t* s) {
+volatile void up(deprecated_semaphore_t* s) {
     unsigned long iflags;
     irq_save(iflags);
 
@@ -80,12 +80,12 @@ volatile void up(semaphore_t* s) {
     }
 }
 
-void mutex_init(mutex_t* s) {
+void deprecated_mutex_init(deprecated_mutex_t* s) {
     INIT_MUTEX(s);
 }
-void mutex_lock(semaphore_t* s) {
+void deprecated_mutex_lock(deprecated_mutex_t* s) {
     down(s);
 }
-void mutex_unlock(semaphore_t* s) {
+void deprecated_mutex_unlock(deprecated_mutex_t* s) {
     up(s);
 }

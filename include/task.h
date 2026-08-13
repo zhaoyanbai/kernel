@@ -87,6 +87,8 @@ typedef union task_union {
 
         list_head_t ready_list;  // 就绪队列
 
+        list_head_t waitq_list;
+
         list_head_t pend;  // 某些条件串成一个链表
 
         // list_head_t wait;

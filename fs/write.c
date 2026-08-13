@@ -45,7 +45,7 @@ ssize_t vfs_generic_file_write(file_t* file, const char* buf, size_t size, loff_
     // assert(mapping->a_ops->read_page != NULL);
     // assert(mapping->a_ops->write_page != NULL);
 
-    down(&inode->i_sem);
+    semaphore_down(&inode->i_sem);
 
     while (size > 0) {
         uint32_t index = pos >> PAGE_SHIFT;       // 所在页号索引
@@ -80,7 +80,7 @@ ssize_t vfs_generic_file_write(file_t* file, const char* buf, size_t size, loff_
     }
 
     // end:
-    up(&inode->i_sem);
+    semaphore_up(&inode->i_sem);
     *p_pos = pos;
 
     //

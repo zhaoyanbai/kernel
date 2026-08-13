@@ -36,7 +36,7 @@ __attribute__((regparm(0))) long sysc_mkdir(const char* path, int mode) {
         assert(dentry == NULL);
     }
 
-    up(&ni.path.dentry->d_inode->i_sem);
+    semaphore_up(&ni.path.dentry->d_inode->i_sem);
 
     return ret;
 }

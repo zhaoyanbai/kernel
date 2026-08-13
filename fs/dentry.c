@@ -9,7 +9,7 @@
 
 #include <errno.h>
 #include <mm.h>
-#include <semaphore.h>
+#include <sync.h>
 #include <string.h>
 #include <system.h>
 #include <vfs.h>
@@ -186,7 +186,7 @@ int dentry_real_lookup(dentry_t* parent, qstr_t* s, dentry_t** dentry) {
     assert(parent->d_inode != NULL);
     inode_t* dir = parent->d_inode;
 
-    down(&dir->i_sem);
+    semaphore_down(&dir->i_sem);
 
     // 在获得信号量后，需要再上cache中查找一遍
     // 因为这个过程中当前进程可能会睡眠，当被唤醒后，其它进程已经在内存准备好了
@@ -194,7 +194,7 @@ int dentry_real_lookup(dentry_t* parent, qstr_t* s, dentry_t** dentry) {
     assert(0 == ret);
 
     if (NULL != *dentry) {
-        up(&dir->i_sem);
+        semaphore_up(&dir->i_sem);
         return ret;
     }
 
@@ -220,7 +220,7 @@ int dentry_real_lookup(dentry_t* parent, qstr_t* s, dentry_t** dentry) {
         // }
     }
 
-    up(&dir->i_sem);
+    semaphore_up(&dir->i_sem);
 
     return ret;
 }
