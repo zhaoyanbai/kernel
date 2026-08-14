@@ -21,6 +21,7 @@
 #include <system.h>
 #include <task.h>
 #include <clock.h>
+#include <sched.h>
 
 irq_desc_t irq_desc[NR_IRQS];
 irq_bh_action_t* irq_bh_actions = NULL;
@@ -91,13 +92,9 @@ __attribute__((regparm(1))) void irq_handler(pt_regs_t* regs) {
     reenter--;
 
     // 考察如果不需要调度程序，直接退出
-    // if (current->need_resched == 0) {
-    //     return;
-    // }
-
-    // if (irq != 0) {
-    //     return;
-    // }
+    if (!need_schedule()) {
+        return;
+    }
 
     enable_irq();
 

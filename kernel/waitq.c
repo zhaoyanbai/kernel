@@ -32,6 +32,9 @@ void waitq_wakeup(waitq_t* waitq, int cnt) {
     assert(waitq != NULL);
     assert(cnt >= 0);
 
+    // 是否唤醒了任务，如果唤醒了任务就将当前任务标记为需要调度，以便新任务更快可以被调度
+    bool woken_task = false;
+
     for (int i = 0; ((i < cnt) || (cnt == 0)); i++) {
         if (list_empty(&waitq->list)) {
             break;
@@ -44,6 +47,12 @@ void waitq_wakeup(waitq_t* waitq, int cnt) {
         list_del_init(&task->waitq_list);
 
         task_set_ready(task);
+
+        woken_task = true;
+    }
+
+    if (woken_task) {
+        set_need_schedule();
     }
 }
 

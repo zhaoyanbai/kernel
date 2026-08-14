@@ -25,6 +25,10 @@
 
 void schedule();
 
+void set_need_schedule();
+void clear_need_schedule();
+bool need_schedule();
+
 extern task_t root_task;
 
 extern void load_cr3(task_t* tsk);

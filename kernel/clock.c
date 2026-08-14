@@ -25,8 +25,6 @@ extern volatile bool enable_clock_irq_delay;
 void clk_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
     jiffies++;
 
-    current->jiffies = jiffies;
-
 #if ENABLE_CLOCK_IRQ_WAIT
     if (enable_clock_irq_delay) {
         return;
@@ -35,6 +33,10 @@ void clk_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
 #endif
 
     current->ticks--;
+
+    if (current->ticks <= 0) {
+        set_need_schedule();
+    }
 
     if (reenter == 0) {
         add_irq_bh_handler(clk_bh_handler, NULL);

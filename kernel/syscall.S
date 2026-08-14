@@ -27,6 +27,7 @@
 .global syscall_entry
 .global ret_from_fork_krnl
 .extern reenter
+.extern sysc_check_resched
 //.global syscall_exit
 
 syscall_entry:
@@ -71,6 +72,8 @@ syscall_entry:
 
     // 保存返回值
     movl    %eax, PT_REGS_EAX(%esp)
+
+    call sysc_check_resched
 
 
     RESTORE_REGS

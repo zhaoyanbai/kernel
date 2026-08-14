@@ -129,3 +129,14 @@ int sysc_bad_nr() {
 
     return -1;
 }
+
+void sysc_check_resched() {
+    unsigned long eflags;
+    irq_save(eflags);
+    if (need_schedule()) {
+        if (!IN_CRITICAL_ZONE()) {
+            schedule();
+        }
+    }
+    irq_restore(eflags);
+}

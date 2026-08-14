@@ -57,7 +57,6 @@ void init_root_task() {
     root_task.priority = 7;
     root_task.ticks = root_task.priority;
     root_task.vma_list = NULL;
-    root_task.need_resched = 0;
     root_task.sched_cnt = 0;
     root_task.sched_keep_cnt = 0;
     root_task.magic = TASK_MAGIC;
@@ -134,6 +133,7 @@ void schedule() {
     unsigned long eflags;
     irq_save(eflags);
 
+    // 把自己挂到就绪队列尾部
     if (prev->state == TASK_READY || prev->state == TASK_RUN) {
         task_set_ready(prev);
     }
@@ -156,6 +156,8 @@ end:
         prev->ticks = prev->priority;
     }
 
+    clear_need_schedule();
+
     if (prev != next) {
         next->sched_cnt++;
         context_switch(prev, next);
@@ -176,10 +178,10 @@ void add_task_for_monitor(task_t* tsk) {
 void task_set_run(task_t* t) {
     assert(t != NULL);
 
-    if (t == &root_task) {
-        t->state = TASK_RUN;
-        return;
-    }
+    // if (t == &root_task) {
+    //     t->state = TASK_RUN;
+    //     return;
+    // }
 
     assert(t->state == TASK_READY);
 
@@ -229,4 +231,20 @@ void task_init_lists(task_t* t) {
     INIT_LIST_HEAD(&t->list);
     INIT_LIST_HEAD(&t->ready_list);
     INIT_LIST_HEAD(&t->waitq_list);
+}
+
+///
+
+static volatile bool _need_schedule = false;
+
+void set_need_schedule() {
+    _need_schedule = true;
+}
+
+void clear_need_schedule() {
+    _need_schedule = false;
+}
+
+bool need_schedule() {
+    return _need_schedule;
 }
