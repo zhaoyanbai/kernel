@@ -125,15 +125,79 @@ void task_reset_priority(int priority) {
     // 而它在调度器调度运行时已经从队列上取下了
     // 运行时不在任何队列上，所以只需要直接调整
 
+    int old_priority = current->priority;
+
     current->priority = priority;
 
     // irq_restore(eflags);
 
     // 降低优先级应该触发调度
-    // 这里简单实现，更复杂的实现，应该是看有没有比priority更高的任务在就绪队列上再决定要不要重新调度
-    if (current->priority < priority) {
+    if ((old_priority < priority) && priority_readyq_has_higher_priority_task(priority)) {
         set_need_schedule();
     }
+}
+
+static void _priority_readyq_enqueue(task_t* task, bool at_head) {
+    assert(task != NULL);
+
+    int priority = task->priority;
+
+    assert(priority >= TASK_PRIORITY_MIN);
+    assert(priority <= TASK_PRIORITY_MAX);
+
+    if (at_head) {
+        list_add(&task->ready_list, g_priority_readyq.lists + priority);
+    } else {
+        list_add_tail(&task->ready_list, g_priority_readyq.lists + priority);
+    }
+
+    priority_readyq_set_bit(priority);
+}
+
+void priority_readyq_enqueue_head(task_t* task) {
+    _priority_readyq_enqueue(task, true);
+}
+
+void priority_readyq_enqueue_tail(task_t* task) {
+    _priority_readyq_enqueue(task, false);
+}
+
+void priority_readyq_unlink(task_t* task) {
+    assert(task != NULL);
+
+    int priority = task->priority;
+
+    assert(priority >= TASK_PRIORITY_MIN);
+    assert(priority <= TASK_PRIORITY_MAX);
+
+    assert(!list_empty(&task->ready_list));
+
+    list_del_init(&task->ready_list);
+
+    if (list_empty(g_priority_readyq.lists + priority)) {
+        priority_readyq_clear_bit(priority);
+    }
+}
+
+bool priority_readyq_has_higher_priority_task(int priority) {
+    assert(priority >= TASK_PRIORITY_MIN);
+    assert(priority <= TASK_PRIORITY_MAX);
+
+    int end_index = priority / READYQ_BITS_PER_WORD;
+    int bit_index = priority % READYQ_BITS_PER_WORD;
+
+    for (int i = 0; i < end_index; i++) {
+        if (g_priority_readyq.bitmap[i] != 0) {
+            return true;
+        }
+    }
+
+    // 虽然bit_index为0的情况下这个if必不满足，但不影响逻辑正确性
+    if (g_priority_readyq.bitmap[end_index] & ((1U << bit_index) - 1)) {
+        return true;
+    }
+
+    return false;
 }
 
 void setup_tasks() {
@@ -221,9 +285,19 @@ void schedule() {
     unsigned long eflags;
     irq_save(eflags);
 
-    // 把自己挂到就绪队列尾部
+    // prev->state == TASK_WAIT 的进程也可能走到这里来，因为这还是切换前
     if (prev->state == TASK_READY || prev->state == TASK_RUN) {
-        task_set_ready(prev);
+        prev->state = TASK_READY;
+        assert(list_empty(&prev->ready_list));
+        if (prev != &root_task) {
+            // 如果时间片没有耗尽(例如：被高优先级的进程抢占了，或者主动让出CPU)，还是把自己挂队列头部，下次还是该优先级第一个被调度，以消耗完全余下的时间片
+            // 如果时间片耗尽了，就把自己挂到就绪队列尾部，下次调度时会重新分配时间片
+            if (prev->ticks_left > 0) {
+                priority_readyq_enqueue_head(prev);
+            } else {
+                priority_readyq_enqueue_tail(prev);
+            }
+        }
     }
 
     next = pick_next_task();
@@ -232,31 +306,12 @@ void schedule() {
         next = &root_task;
         next->ticks_left = 1;
     } else {
-        list_del_init(&next->ready_list);
+        priority_readyq_unlink(next);
         next->state = TASK_RUN;
         if (next->ticks_left <= 0) {
             next->ticks_left = TASK_TICKS_PER_QUANTUM;
         }
-        if (list_empty(g_priority_readyq.lists + next->priority)) {
-            priority_readyq_clear_bit(next->priority);
-        }
     }
-
-#if 0
-    if (list_empty(&ready_tasks)) {
-        next = &root_task;
-        goto end;
-    }
-
-    // 从ready_tasks中选择第一个
-    next = list_entry(ready_tasks.next, task_t, ready_list);
-
-    assert(next->state == TASK_READY);
-    assert(next != &root_task);
-
-end:
-    task_set_run(next);
-#endif
 
     clear_need_schedule();
 
@@ -277,25 +332,6 @@ void add_task_for_monitor(task_t* tsk) {
     monitor_tasks[id] = tsk;
 }
 
-// void task_set_run(task_t* t) {
-//     assert(t != NULL);
-
-//     // if (t == &root_task) {
-//     //     t->state = TASK_RUN;
-//     //     return;
-//     // }
-
-//     assert(t->state == TASK_READY);
-
-//     unsigned long eflags;
-//     irq_save(eflags);
-
-//     list_del_init(&t->ready_list);
-//     t->state = TASK_RUN;
-
-//     irq_restore(eflags);
-// }
-
 void task_set_ready(task_t* t) {
     assert(t != NULL);
     if (t == &root_task) {
@@ -306,34 +342,27 @@ void task_set_ready(task_t* t) {
     unsigned long eflags;
     irq_save(eflags);
 
-    //
-    if (!list_empty(&t->ready_list)) {
-        list_del_init(&t->ready_list);
-    }
+    // 不应该出现重复设置ready的情况
+    assert(list_empty(&t->ready_list));
 
     //
-    assert(t->priority >= TASK_PRIORITY_MIN);
-    assert(t->priority <= TASK_PRIORITY_MAX);
-    list_head_t* list = g_priority_readyq.lists + t->priority;
-    list_add_tail(&t->ready_list, list);
-    priority_readyq_set_bit(t->priority);
+    priority_readyq_enqueue_tail(t);
     t->state = TASK_READY;
+
+    if (t->priority < current->priority || current == &root_task) {
+        set_need_schedule();
+    }
 
     irq_restore(eflags);
 }
 
-void task_set_wait(task_t* t) {
-    assert(t != NULL);
-    // printk("task_set_wait %s %d\n", t->name, t->state);
-    assert(t != &root_task);
+void task_set_wait() {
+    task_t* task = current;
+    assert(task != NULL);
+    assert(task != &root_task);
+    assert(task->state == TASK_RUN);
 
-    unsigned long eflags;
-    irq_save(eflags);
-
-    list_del_init(&t->ready_list);
-    t->state = TASK_WAIT;
-
-    irq_restore(eflags);
+    task->state = TASK_WAIT;
 }
 
 void task_init_lists(task_t* t) {
