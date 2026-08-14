@@ -38,6 +38,14 @@ typedef struct priority_readyq {
     uint32_t bitmap[READYQ_BITMAP_WORD_CNT];
 } priority_readyq_t;
 
+// 需要关中断执行
+void priority_readyq_enqueue_head(task_t* task);
+void priority_readyq_enqueue_tail(task_t* task);
+// 需要关中断执行
+void priority_readyq_unlink(task_t* task);
+
+bool priority_readyq_has_higher_priority_task(int priority);
+
 void task_reset_priority(int priority);
 
 void schedule();

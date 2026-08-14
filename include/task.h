@@ -119,9 +119,8 @@ static inline pid_t sysc_getpid() {
 #define get_tsk_from_list(p) list_entry((p), Task, list)
 #define del_tsk_from_list(tsk) list_del((&tsk->list))
 
-// void task_set_run(task_t* t);
 void task_set_ready(task_t* t);
-void task_set_wait(task_t* t);
+void task_set_wait();  // 只有当前进程可以调用
 
 void task_init_lists(task_t* t);
 
