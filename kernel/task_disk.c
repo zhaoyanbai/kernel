@@ -10,6 +10,7 @@
 #include <disk.h>
 #include <sync.h>
 #include <sata.h>
+#include <sched.h>
 // #include
 
 disk_request_queue_t disk_request_queue;
@@ -66,6 +67,7 @@ void disk_request(disk_request_t* req) {
 }
 
 void disk_task_entry() {
+    task_reset_priority(TASK_PRIORITY_LEVEL_DRIVER + 7);
     while (1) {
         semaphore_down(&disk_request_queue.sem);
 

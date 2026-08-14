@@ -38,9 +38,10 @@ enum {
 
 #define TASK_NAME_SIZE 32
 
-#define TASK_MAX_PRIORITY 99
-
 #define TASK_MAGIC 0xAABBCCDD11223344
+
+// 每个时间片（quantum）包含的时钟滴答数；任务连续运行的上限
+#define TASK_TICKS_PER_QUANTUM 3
 
 #define NR_TASK_OPEN_CNT 32
 typedef struct task_files {
@@ -56,8 +57,8 @@ typedef union task_union {
         uint32_t esp;
         uint32_t eip;
 
-        int ticks;
-
+        // [0, 100)
+        // 0 最高 99 最低
         int priority;
 
         pid_t pid;
@@ -84,6 +85,10 @@ typedef union task_union {
         list_head_t ready_list;  // 就绪队列
         list_head_t waitq_list;
 
+        int ticks_left;  // 时间片剩余
+
+        // 仅用于统计
+        uint32_t st_ticks;
         uint32_t sched_cnt;       // 被调度换上CPU的次数
         uint32_t sched_keep_cnt;  // 时间片到了，但是没有被换出，又重新执行的次数
 
@@ -114,7 +119,7 @@ static inline pid_t sysc_getpid() {
 #define get_tsk_from_list(p) list_entry((p), Task, list)
 #define del_tsk_from_list(tsk) list_del((&tsk->list))
 
-void task_set_run(task_t* t);
+// void task_set_run(task_t* t);
 void task_set_ready(task_t* t);
 void task_set_wait(task_t* t);
 

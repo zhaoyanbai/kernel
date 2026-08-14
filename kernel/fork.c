@@ -83,8 +83,9 @@ int do_fork(pt_regs_t* regs, unsigned long flags) {
     tsk->pid = get_next_pid();
     tsk->ppid = current->pid;
     tsk->priority = current->priority;
-    tsk->ticks = tsk->priority;
 
+    tsk->ticks_left = TASK_TICKS_PER_QUANTUM;
+    tsk->st_ticks = 0;
     tsk->sched_cnt = 0;
     tsk->sched_keep_cnt = 0;
 
