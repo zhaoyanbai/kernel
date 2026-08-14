@@ -312,7 +312,7 @@ const char* task_state(unsigned int state) {
 void print_all_tasks() {
     extern task_t* monitor_tasks[];
 
-    ap_printl(MPL_TASK_TITLE, "         NAME      STATE TK/PI REASON     SCHED     KEEP");
+    ap_printl(MPL_TASK_TITLE, "         NAME      STATE LT/PI REASON     TICKS     SCHED     KEEP");
 
     for (int i = 0; i < 10; i++) {
         task_t* p = monitor_tasks[i];
@@ -321,16 +321,17 @@ void print_all_tasks() {
             continue;
         }
 
-        ap_printl(MPL_TASK_0 + p->pid, "%08x %-6s:%u %s %02d/%02u %-10s %-9u %-9u",
-               p,                     //
-               p->name,               //
-               p->pid,                //
-               task_state(p->state),  //
-               p->ticks,              //
-               p->priority,           //
-               p->reason,             //
-               p->sched_cnt,          //
-               p->sched_keep_cnt      //
+        ap_printl(MPL_TASK_0 + p->pid, "%08x %-6s:%u %s %02d/%02u %-10s %-9u %-9u %-9u",
+                  p,                     //
+                  p->name,               //
+                  p->pid,                //
+                  task_state(p->state),  //
+                  p->ticks_left,         //
+                  p->priority,           //
+                  p->reason,             //
+                  p->st_ticks,           //
+                  p->sched_cnt,          //
+                  p->sched_keep_cnt      //
         );
     }
 }

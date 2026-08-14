@@ -32,9 +32,12 @@ void clk_handler(unsigned int irq, pt_regs_t* regs, void* dev_id) {
     enable_clock_irq_delay = true;
 #endif
 
-    current->ticks--;
+    if (current->ticks_left > 0) {
+        current->ticks_left--;
+    }
+    current->st_ticks++;
 
-    if (current->ticks <= 0) {
+    if (current->ticks_left <= 0) {
         set_need_schedule();
     }
 

@@ -45,7 +45,7 @@ void load_cr3(task_t* tsk) {
 extern pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
 
 LIST_HEAD(all_tasks);
-LIST_HEAD(ready_tasks);
+// LIST_HEAD(ready_tasks);
 
 void init_root_task() {
     int i;
@@ -54,8 +54,9 @@ void init_root_task() {
     root_task.ppid = 0;
     root_task.state = TASK_RUN;
     root_task.reason = "root";
-    root_task.priority = 7;
-    root_task.ticks = root_task.priority;
+    root_task.priority = TASK_PRIORITY_MAX;
+    root_task.ticks_left = 1;
+    root_task.st_ticks = 0;
     root_task.vma_list = NULL;
     root_task.sched_cnt = 0;
     root_task.sched_keep_cnt = 0;
@@ -84,9 +85,62 @@ void init_root_task() {
 
 kmem_cache_t* task_t_cache;
 
+static priority_readyq_t g_priority_readyq;
+void priority_readyq_init(priority_readyq_t* readyq) {
+    for (int i = 0; i < TASK_PRIORITY_CNT; i++) {
+        list_init(&readyq->lists[i]);
+    }
+
+    for (int i = 0; i < READYQ_BITMAP_WORD_CNT; i++) {
+        readyq->bitmap[i] = 0;
+    }
+}
+
+static void priority_readyq_set_bit(int priority) {
+    int item_index = priority / READYQ_BITS_PER_WORD;
+    int bit_index = priority % READYQ_BITS_PER_WORD;
+    g_priority_readyq.bitmap[item_index] |= (1U << bit_index);
+}
+
+static void priority_readyq_clear_bit(int priority) {
+    int item_index = priority / READYQ_BITS_PER_WORD;
+    int bit_index = priority % READYQ_BITS_PER_WORD;
+    g_priority_readyq.bitmap[item_index] &= ~(1U << bit_index);
+}
+
+void task_reset_priority(int priority) {
+    assert(priority >= TASK_PRIORITY_MIN);
+    assert(priority <= TASK_PRIORITY_MAX);
+
+    task_t* task = current;
+
+    if (task->priority == priority) {
+        return;
+    }
+
+    // unsigned long eflags;
+    // irq_save(eflags);
+
+    // 只有当前运行的Task才能调整priority
+    // 而它在调度器调度运行时已经从队列上取下了
+    // 运行时不在任何队列上，所以只需要直接调整
+
+    current->priority = priority;
+
+    // irq_restore(eflags);
+
+    // 降低优先级应该触发调度
+    // 这里简单实现，更复杂的实现，应该是看有没有比priority更高的任务在就绪队列上再决定要不要重新调度
+    if (current->priority < priority) {
+        set_need_schedule();
+    }
+}
+
 void setup_tasks() {
     INIT_LIST_HEAD(&all_tasks);
-    INIT_LIST_HEAD(&ready_tasks);
+    // INIT_LIST_HEAD(&ready_tasks);
+
+    priority_readyq_init(&g_priority_readyq);
 
     init_root_task();
 
@@ -126,6 +180,40 @@ void context_switch(task_t* prev, task_t* next) {
         : "memory");
 }
 
+task_t* pick_next_task() {
+    int index = -1;  // 代表所有READY队列都为空
+    for (int i = 0; i < READYQ_BITMAP_WORD_CNT; i++) {
+        if (g_priority_readyq.bitmap[i] != 0) {
+            index = __builtin_ctz(g_priority_readyq.bitmap[i]);
+
+            index += i * READYQ_BITS_PER_WORD;
+            break;
+        }
+    }
+
+    if (index == -1) {
+        return NULL;
+    }
+
+    assert(index >= 0);
+    assert(index < TASK_PRIORITY_CNT);
+
+    // 对应的优先级队列必定不为空
+    list_head_t* list = g_priority_readyq.lists + index;
+    assert(!list_empty(list));
+
+    // 返回队列头部第一个任务
+    task_t* task = list_entry(list->next, task_t, ready_list);
+    assert(task != NULL);
+    assert(task->priority == index);
+    assert(task != &root_task);
+    assert(task->priority >= TASK_PRIORITY_MIN);
+    assert(task->priority <= TASK_PRIORITY_MAX);
+    assert(task->state == TASK_READY);
+
+    return task;
+}
+
 void schedule() {
     task_t* prev = current;
     task_t* next = NULL;
@@ -138,6 +226,23 @@ void schedule() {
         task_set_ready(prev);
     }
 
+    next = pick_next_task();
+
+    if (next == NULL) {
+        next = &root_task;
+        next->ticks_left = 1;
+    } else {
+        list_del_init(&next->ready_list);
+        next->state = TASK_RUN;
+        if (next->ticks_left <= 0) {
+            next->ticks_left = TASK_TICKS_PER_QUANTUM;
+        }
+        if (list_empty(g_priority_readyq.lists + next->priority)) {
+            priority_readyq_clear_bit(next->priority);
+        }
+    }
+
+#if 0
     if (list_empty(&ready_tasks)) {
         next = &root_task;
         goto end;
@@ -151,10 +256,7 @@ void schedule() {
 
 end:
     task_set_run(next);
-
-    if (prev->ticks <= 0) {
-        prev->ticks = prev->priority;
-    }
+#endif
 
     clear_need_schedule();
 
@@ -175,24 +277,24 @@ void add_task_for_monitor(task_t* tsk) {
     monitor_tasks[id] = tsk;
 }
 
-void task_set_run(task_t* t) {
-    assert(t != NULL);
+// void task_set_run(task_t* t) {
+//     assert(t != NULL);
 
-    // if (t == &root_task) {
-    //     t->state = TASK_RUN;
-    //     return;
-    // }
+//     // if (t == &root_task) {
+//     //     t->state = TASK_RUN;
+//     //     return;
+//     // }
 
-    assert(t->state == TASK_READY);
+//     assert(t->state == TASK_READY);
 
-    unsigned long eflags;
-    irq_save(eflags);
+//     unsigned long eflags;
+//     irq_save(eflags);
 
-    list_del_init(&t->ready_list);
-    t->state = TASK_RUN;
+//     list_del_init(&t->ready_list);
+//     t->state = TASK_RUN;
 
-    irq_restore(eflags);
-}
+//     irq_restore(eflags);
+// }
 
 void task_set_ready(task_t* t) {
     assert(t != NULL);
@@ -203,11 +305,20 @@ void task_set_ready(task_t* t) {
 
     unsigned long eflags;
     irq_save(eflags);
+
+    //
     if (!list_empty(&t->ready_list)) {
         list_del_init(&t->ready_list);
     }
-    list_add_tail(&t->ready_list, &ready_tasks);
+
+    //
+    assert(t->priority >= TASK_PRIORITY_MIN);
+    assert(t->priority <= TASK_PRIORITY_MAX);
+    list_head_t* list = g_priority_readyq.lists + t->priority;
+    list_add_tail(&t->ready_list, list);
+    priority_readyq_set_bit(t->priority);
     t->state = TASK_READY;
+
     irq_restore(eflags);
 }
 

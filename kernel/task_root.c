@@ -62,7 +62,7 @@ void kernel_task(char* name, void* entry, void* arg) {
 
 // 从multiboot.S进入这里
 void root_task_entry() {
-    printk("%08x %s %u %u\n", current, current->name, current->ticks, current->priority);
+    printk("%08x %s %u %u\n", current, current->name, current->ticks_left, current->priority);
 
 #if 0
     pt_regs_t *regs = ((pt_regs_t *)(TASK_SIZE + (unsigned long)(&root_task))) - 1;
@@ -80,7 +80,8 @@ void root_task_entry() {
 
     strcpy(current->name, "idle");
 
-    current->priority = 1;
+    task_reset_priority(TASK_PRIORITY_MAX);
+
     while (1) {
         asm("hlt;");
     }

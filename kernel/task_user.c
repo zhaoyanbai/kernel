@@ -29,7 +29,7 @@ void flush_tlb() {
 }
 
 void user_task_entry() {
-    current->priority = 79;
+    task_reset_priority(TASK_PRIORITY_LEVEL_USER + 9);
 
     // ring3只占用一个page，页的起始位置放的是代码，页的末尾当栈用
     // ring3的地址直接是物理地址

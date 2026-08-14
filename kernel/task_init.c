@@ -57,7 +57,7 @@ u16 disk_buf1[256] __attribute__((__aligned__(512)));
 u16 disk_buf2[256] __attribute__((__aligned__(512)));
 
 void taskA_entry() {
-    current->priority = 3;
+    task_reset_priority(97);
 
     while (1) {
         sysc_wait(197);
@@ -86,7 +86,7 @@ void taskA_entry() {
 }
 
 void taskB_entry() {
-    current->priority = 13;
+    task_reset_priority(87);
 
     while (1) {
         sysc_wait(7);
@@ -112,7 +112,7 @@ void taskB_entry() {
 }
 
 void taskC_entry() {
-    current->priority = 17;
+    task_reset_priority(83);
 
     while (1) {
         sysc_wait(100);
@@ -126,7 +126,7 @@ void taskC_entry() {
 }
 
 void init_task_entry() {
-    current->priority = 10;
+    task_reset_priority(TASK_PRIORITY_LEVEL_SYSTEM + 0);
 
 //    pt_regs_t *child_regs = ((pt_regs_t *)(TASK_SIZE + (unsigned long)current)) - 1;
 //    child_regs->eflags |= 0x200;

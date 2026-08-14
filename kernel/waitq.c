@@ -32,8 +32,10 @@ void waitq_wakeup(waitq_t* waitq, int cnt) {
     assert(waitq != NULL);
     assert(cnt >= 0);
 
-    // 是否唤醒了任务，如果唤醒了任务就将当前任务标记为需要调度，以便新任务更快可以被调度
-    bool woken_task = false;
+    // 是否唤醒了优先级更高的任务，如果唤醒就将当前任务标记为需要调度，以便新的高优先级任务更快可以被调度
+    bool woken_higher_priority_task = false;
+
+    bool woken = false;
 
     for (int i = 0; ((i < cnt) || (cnt == 0)); i++) {
         if (list_empty(&waitq->list)) {
@@ -48,10 +50,15 @@ void waitq_wakeup(waitq_t* waitq, int cnt) {
 
         task_set_ready(task);
 
-        woken_task = true;
+        woken = true;
+
+        // 当前任务优先级低于唤醒的任务
+        if (current->priority > task->priority) {
+            woken_higher_priority_task = true;
+        }
     }
 
-    if (woken_task) {
+    if (woken_higher_priority_task || (woken && (current == &root_task))) {
         set_need_schedule();
     }
 }
