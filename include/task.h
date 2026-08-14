@@ -59,9 +59,6 @@ typedef union task_union {
         int ticks;
 
         int priority;
-        int64_t jiffies;
-
-        volatile int need_resched;
 
         pid_t pid;
         pid_t ppid;

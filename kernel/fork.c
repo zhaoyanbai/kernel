@@ -85,7 +85,6 @@ int do_fork(pt_regs_t* regs, unsigned long flags) {
     tsk->priority = current->priority;
     tsk->ticks = tsk->priority;
 
-    tsk->need_resched = 0;
     tsk->sched_cnt = 0;
     tsk->sched_keep_cnt = 0;
 
