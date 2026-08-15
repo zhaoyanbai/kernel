@@ -20,6 +20,7 @@
 #include "system.h"
 #include "timer.h"
 #include "clock.h"
+#include "cpuid.h"
 
 extern void syscall_entry();
 extern void init_sysc_handler_table();
@@ -76,6 +77,11 @@ int sysc_wait(int ticks) {
 }
 
 int sysc_test() {
+    // 测试修改优先级
+    int priority = current->priority;
+    priority += 1;
+    priority = TASK_PRIORITY_LEVEL_USER + (priority % 10);
+    task_reset_priority(priority);
     return 0;
 }
 int sysc_pause() {
@@ -89,7 +95,33 @@ int sysc_debug(unsigned int v) {
 }
 
 int sysc_rand() {
+    bool has_rdrand = false;
+    cpuid_regs_t cpuid_regs = cpuid(1);
+    if (cpuid_regs.ecx & CPUID_FEAT_ECX_RDRAND) {
+        has_rdrand = true;
+    }
+
     uint32_t rand = jiffies;
+    static uint32_t rand_seed = 0;
+
+    if (has_rdrand) {
+        asm volatile("rdrand %0" : "=r"(rand) : : "cc");
+    } else {
+        if (0 == rand_seed) {
+            rand_seed = jiffies;
+            int cnt = (jiffies % 32);
+            for (int i = 0; i < cnt; i++) {
+                uint32_t bit = rand_seed & 1;
+                rand_seed >>= 1;
+                rand_seed |= (bit << 31);
+            }
+            rand_seed ^= ((uint32_t)rdtsc());
+        }
+
+        rand_seed = rand_seed * 1664525u + 1013904223u;
+        rand = rand_seed;
+    }
+
     return (int)rand;
 }
 

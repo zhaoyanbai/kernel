@@ -21,7 +21,7 @@ qemu-system-i386 \
     -boot d \
     -m 128\
     -smp 2 \
-    -cpu qemu32,+x2apic \
+    -cpu qemu32,+x2apic,+rdrand \
     -machine q35 \
     -serial tcp::6666,server,nowait \
     -drive file=sata.img,format=raw,if=none,id=sata-disk \

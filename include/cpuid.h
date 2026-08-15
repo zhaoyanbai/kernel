@@ -9,6 +9,8 @@
 
 #pragma once
 
+#define CPUID_FEAT_ECX_RDRAND (1u << 30)
+
 typedef struct cpuid_regs {
     unsigned long eax, ebx, ecx, edx;
 } cpuid_regs_t;
