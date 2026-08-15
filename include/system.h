@@ -275,7 +275,9 @@ bool in_critical_zone();
 #define LEAVE_CRITICAL_ZONE(x) leave_critical_zone()
 #define IN_CRITICAL_ZONE() in_critical_zone()
 
-#endif
+uint64_t read_uint64_consistent(volatile uint64_t* p);
+
+#endif  // !ASM
 
 #define DISABLE_IDE 1
 

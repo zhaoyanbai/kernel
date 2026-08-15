@@ -314,31 +314,36 @@ static char* format_runtime_tsc(uint64_t tsc) {
     uint64_t runtime_tsc = tsc;
     uint64_t _ms = 0;
     uint64_t _us = 0;
-    uint64_t _ns = 0;
+    // uint64_t _ns = 0;
     uint64_t _remainder = 0;
+
+    assert(tsc_khz != 0);
+
     udiv64(runtime_tsc, tsc_khz, &_ms, &_remainder);
     udiv64(_remainder * 1000, tsc_khz, &_us, &_remainder);
-    udiv64(_remainder * 1000, tsc_khz, &_ns, NULL);
+    // udiv64(_remainder * 1000, tsc_khz, &_ns, NULL);
 
     uint64_t total_seconds = 0;
-    uint64_t days = 0;
-    uint64_t hours = 0;
-    uint64_t minutes = 0;
-    uint64_t seconds = 0;
 
     // total_seconds = ms / 1000;
     // ms = ms % 1000
     udiv64(_ms, 1000, &total_seconds, &_ms);
+
+    static char buffer[64];
+    buffer[0] = 0;
+
+#if 0
+    uint64_t days = 0;
+    uint64_t hours = 0;
+    uint64_t minutes = 0;
+    uint64_t seconds = 0;
 
     // days = total_seconds / (60 * 60 * 24);
     udiv64(total_seconds, 60 * 60 * 24, &days, &total_seconds);
     udiv64(total_seconds, 60 * 60, &hours, &total_seconds);
     udiv64(total_seconds, 60, &minutes, &seconds);
 
-    static char buffer[64];
     char tmp[16];
-
-    buffer[0] = 0;
 
     if (days > 0) {
         sprintf(tmp, "%lud", days);
@@ -360,15 +365,23 @@ static char* format_runtime_tsc(uint64_t tsc) {
     uint32_t _ms32 = (uint32_t)_ms;
     uint32_t _us32 = (uint32_t)_us;
     _us32 /= 100;  // 保留1位小数
-    sprintf(tmp, ".%03u.%u", _ms32, _us32);
+    sprintf(tmp, ".%03u%u", _ms32, _us32);
     strcat(buffer, tmp);
+#else
+    uint64_t seconds = total_seconds;
+    uint32_t _ms32 = (uint32_t)_ms;
+    uint32_t _us32 = (uint32_t)_us;
+    _us32 /= 100;  // 保留1位小数
+    sprintf(buffer, "%lu.%03u%u", seconds, _ms32, _us32);
+#endif
 
     return (char*)buffer;
 }
+
 void print_all_tasks() {
     extern task_t* monitor_tasks[];
 
-    ap_printl(MPL_TASK_TITLE, "         NAME      STATE LT/PI REASON     TICKS     RUNTIME");
+    ap_printl(MPL_TASK_TITLE, "         NAME      STATE LT/PI REASON     TICKS          RUNTIME");
 
     for (int i = 0; i < 10; i++) {
         task_t* p = monitor_tasks[i];
@@ -377,9 +390,17 @@ void print_all_tasks() {
             continue;
         }
 
-        char* runtime_str = format_runtime_tsc(p->st_runtime_tsc);
+        // 此处非严格意义上的统计，只用于monitor
+        // 因为中间若正好发生 schedule 结算，可能发生多算或少算，影响有限，所以用最简单的实现
+        uint64_t runtime_tsc = read_uint64_consistent(&p->st_runtime_tsc);
+        uint64_t last_exec_tsc = read_uint64_consistent(&p->st_last_exec_tsc);
+        if (last_exec_tsc != 0) {  // 如果进程还在运行中，则算上还没结算的时间差
+            runtime_tsc += rdtsc() - last_exec_tsc;
+        }
 
-        ap_printl(MPL_TASK_0 + p->pid, "%08x %-6s:%u %s %02d/%02u %-10s %-9lu %16s",
+        char* runtime_str = format_runtime_tsc(runtime_tsc);
+
+        ap_printl(MPL_TASK_0 + p->pid, "%08x %-6s:%u %s %02d/%02u %-10s %-9lu %12s",
                   p,                     //
                   p->name,               //
                   p->pid,                //

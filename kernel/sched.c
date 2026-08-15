@@ -62,7 +62,7 @@ void init_root_task() {
 
     task_init_lists(&root_task);
     task_init_stats(&root_task);
-    root_task.st_last_exec_tsc = rdtsc();
+    // root_task.st_last_exec_tsc = rdtsc();
 
     list_add(&root_task.list, &all_tasks);
 

@@ -73,7 +73,7 @@ void root_task_entry() {
 	    p--;
     }
 #endif
-
+    current->st_last_exec_tsc = rdtsc();
     sti();
 
     kernel_task("init", init_task_entry, NULL);
