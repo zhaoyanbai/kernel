@@ -194,6 +194,38 @@ bool hpet_calibration_end(uint32_t timn) {
     return false;
 }
 
+void hpet_calibrate_tsc(uint32_t hz) {
+    const uint32_t timn = 0;
+
+    hpet_disable();
+
+    hpet_prepare_calibration(timn, hz);
+
+    hpet_enable();
+
+    uint64_t tsc_t0 = rdtsc();
+
+    while (!hpet_calibration_end(timn)) {
+        asm("pause");
+    }
+
+    uint64_t tsc_t1 = rdtsc();
+
+    assert(tsc_t1 > tsc_t0);
+
+    uint64_t tsc_delta = tsc_t1 - tsc_t0;
+
+    // HPET精确等待T秒，T = 1/hz，则T秒内TSC的计数为tsc_delta
+    // tsc_dela = tsc频率(次/秒) * T秒
+    // 所以 tcs频率(HZ:次/秒）= tsc_delta / T秒 = tsc_delta * hz
+    // 所以 tcs频率(KHZ:次/毫秒) = tsc_delta * hz / 1000
+    //
+    // tsc_khz = tsc_delta * hz / 1000;
+    udiv64(tsc_delta * hz, 1000, &tsc_khz, NULL);
+
+    printk("TSC frequency: %u KHz\n", tsc_khz);
+}
+
 void hpet_init() {
     assert(hpet_use_phys_addr_index < sizeof(hpet_phys_addrs) / sizeof(hpet_phys_addrs[0]));
     hpet_phys_addr = hpet_phys_addrs[hpet_use_phys_addr_index];
@@ -219,4 +251,7 @@ void hpet_init() {
     printk("HPET Configuration: 0x%08x%08x\n", (uint32_t)(config >> 32), (uint32_t)config);
     printk("HPET enabled: %s\n", (config & (1ULL << 0)) ? "Y" : "N");
     printk("HPET legacy replacement: %s\n", (config & (1ULL << 1)) ? "Y" : "N");
+
+    // 用HPET等待 1秒*1000/10=100ms 的时间来校准TSC频率
+    hpet_calibrate_tsc(10);
 }

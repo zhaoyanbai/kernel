@@ -68,6 +68,11 @@ void kfree(void* addr);
 #define disableIRQ() cli()
 #define enableIRQ() sti()
 
+extern uint64_t tsc_khz;  // TSC频率(KHZ:次/毫秒)
+uint64_t rdtsc();
+
+void udiv64(uint64_t dividend, uint64_t divisor, uint64_t* quotient, uint64_t* remainder);
+
 #define ALIGN(x, a) (((x) + (a) - 1) & ~((a) - 1))
 
 #define INT_STACK_SIZE PAGE_SIZE

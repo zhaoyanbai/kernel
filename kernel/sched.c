@@ -56,14 +56,13 @@ void init_root_task() {
     root_task.reason = "root";
     root_task.priority = TASK_PRIORITY_MAX;
     root_task.ticks_left = 1;
-    root_task.st_ticks = 0;
     root_task.vma_list = NULL;
-    root_task.sched_cnt = 0;
-    root_task.sched_keep_cnt = 0;
     root_task.magic = TASK_MAGIC;
     strcpy(root_task.name, "root");
 
     task_init_lists(&root_task);
+    task_init_stats(&root_task);
+    root_task.st_last_exec_tsc = rdtsc();
 
     list_add(&root_task.list, &all_tasks);
 
@@ -316,7 +315,16 @@ void schedule() {
     clear_need_schedule();
 
     if (prev != next) {
+        uint64_t tsc = rdtsc();
+
+        prev->st_runtime_tsc += tsc - prev->st_last_exec_tsc;
+        prev->st_last_exec_tsc = 0;
+
+        assert(next->st_last_exec_tsc == 0);
+        next->st_last_exec_tsc = tsc;
+
         next->sched_cnt++;
+
         context_switch(prev, next);
     } else {
         next->sched_keep_cnt++;
@@ -371,6 +379,15 @@ void task_init_lists(task_t* t) {
     INIT_LIST_HEAD(&t->list);
     INIT_LIST_HEAD(&t->ready_list);
     INIT_LIST_HEAD(&t->waitq_list);
+}
+
+void task_init_stats(task_t* t) {
+    assert(t != NULL);
+    t->st_ticks = 0;
+    t->st_last_exec_tsc = 0;
+    t->st_runtime_tsc = 0;
+    t->sched_cnt = 0;
+    t->sched_keep_cnt = 0;
 }
 
 ///
