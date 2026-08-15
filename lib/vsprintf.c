@@ -169,17 +169,19 @@ char* i64tou(char* s, uint64_t n) {
 
 char* itou(char* s, unsigned int n) {
     char* p = s;
+    char* h = s;
 
     do {
         *p++ = (n % 10) + '0';
         n /= 10;
     } while (n);
 
-    *p-- = 0;
+    *p = 0;
+    p--;
 
-    while (s < p) {
-        swap_char(s, p);
-        s++;
+    while (h < p) {
+        swap_char(h, p);
+        h++;
         p--;
     }
     return s;

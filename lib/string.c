@@ -88,11 +88,12 @@ char* strcat(char* dest, const char* src) {
     //     ;
     while (1) {
         *dest = *src;
-        dest++;
-        src++;
         if (*dest == 0) {
             break;
         }
+
+        dest++;
+        src++;
     }
     return tmp;
 }
