@@ -157,13 +157,53 @@ char* itoa(char* s, int n) {
     return s;
 }
 
-char* i64tou(char* s, uint64_t n) {
-    itou(s, n >> 32);
-    int i = 0;
-    if ((n >> 32) > 0) {
-        i = strlen(s);
+static void _udiv64(uint64_t dividend, uint64_t divisor, uint64_t* quotient, uint64_t* remainder) {
+    uint64_t _quotient = 0;
+    uint64_t _remainder = 0;
+
+    // 整体算法类似10进的除法，只不过换成二进制的数来算
+    // 10进制需要猜能乘几，而二进制不用猜，只有0和1，所以直接比较大小即可
+    for (int i = 63; i >= 0; i--) {
+        // 以下两行可以看成类似10进制除法的被除数从高往低试除数时，被除数被逐渐试的高位数
+        _remainder <<= 1;
+        _remainder |= (dividend >> i) & 1;
+
+        // 如果这部分高位数能比被除数大，则商的对应位为1，否则为0
+        if (_remainder >= divisor) {
+            _remainder -= divisor;
+            _quotient |= (1ULL << i);
+        } else {
+            // 商为0的比特位其实什么都不用做
+        }
     }
-    itou(s + i, n & 0xFFFFFFFF);
+
+    if (quotient) {
+        *quotient = _quotient;
+    }
+
+    if (remainder) {
+        *remainder = _remainder;
+    }
+}
+
+char* i64tou(char* s, uint64_t n) {
+    char* p = s;
+    char* h = s;
+
+    do {
+        uint64_t remainder = 0;
+        _udiv64(n, 10, &n, &remainder);
+        *p++ = remainder + '0';
+    } while (n > 0);
+
+    *p = 0;
+    p--;
+
+    while (h < p) {
+        swap_char(h, p);
+        h++;
+        p--;
+    }
     return s;
 }
 
