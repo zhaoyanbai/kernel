@@ -223,7 +223,7 @@ void hpet_calibrate_tsc(uint32_t hz) {
     // tsc_khz = tsc_delta * hz / 1000;
     udiv64(tsc_delta * hz, 1000, &tsc_khz, NULL);
 
-    printk("TSC frequency: %u KHz\n", tsc_khz);
+    printk("TSC frequency: %lu KHz\n", tsc_khz);
 }
 
 void hpet_init() {

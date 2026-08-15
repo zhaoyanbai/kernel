@@ -275,6 +275,22 @@ void udiv64(uint64_t dividend, uint64_t divisor, uint64_t* quotient, uint64_t* r
     }
 }
 
+uint64_t read_uint64_consistent(volatile uint64_t* p) {
+    uint32_t hi1 = 0;
+    uint32_t low = 0;
+    uint32_t hi2 = 0;
+
+    volatile uint32_t* w = (volatile uint32_t*)p;
+
+    do {
+        hi1 = w[1];
+        low = w[0];
+        hi2 = w[1];
+    } while (hi1 != hi2);
+
+    return ((uint64_t)hi1 << 32) | low;
+}
+
 paddr_t get_rcba_paddr() {
     uint32_t rcba = pci_get_rcba();
 
