@@ -32,6 +32,7 @@ int do_fork(pt_regs_t* regs, unsigned long flags) {
     tsk->state = TASK_INITING;
 
     task_init_lists(tsk);
+    task_init_stats(tsk);
 
     unsigned long iflags;
     irq_save(iflags);
@@ -85,9 +86,6 @@ int do_fork(pt_regs_t* regs, unsigned long flags) {
     tsk->priority = current->priority;
 
     tsk->ticks_left = TASK_TICKS_PER_QUANTUM;
-    tsk->st_ticks = 0;
-    tsk->sched_cnt = 0;
-    tsk->sched_keep_cnt = 0;
 
     // for switch_to
     tsk->eip = child_regs->eip;

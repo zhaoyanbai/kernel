@@ -88,9 +88,11 @@ typedef union task_union {
         int ticks_left;  // 时间片剩余
 
         // 仅用于统计
-        uint32_t st_ticks;
-        uint32_t sched_cnt;       // 被调度换上CPU的次数
-        uint32_t sched_keep_cnt;  // 时间片到了，但是没有被换出，又重新执行的次数
+        uint64_t st_ticks;
+        uint64_t st_last_exec_tsc;  // 上次被调度上CPU执行的TSC时间
+        uint64_t st_runtime_tsc;    // 总的运行时间TSC时间
+        uint32_t sched_cnt;         // 被调度换上CPU的次数
+        uint32_t sched_keep_cnt;    // 时间片到了，但是没有被换出，又重新执行的次数
 
         uint64_t magic;  // 栈溢出标志
     };
@@ -123,6 +125,7 @@ void task_set_ready(task_t* t);
 void task_set_wait();  // 只有当前进程可以调用
 
 void task_init_lists(task_t* t);
+void task_init_stats(task_t* t);
 
 #endif  // ASM
 
