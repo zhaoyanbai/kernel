@@ -28,6 +28,11 @@ ring3_entry:
     nop
 
     pushl   $0                  # 模拟一个内核不需要的参数1
+    pushl   $SYSC_TEST
+    call    ring3_syscall
+    addl    $8, %esp
+
+    pushl   $0                  # 模拟一个内核不需要的参数1
     pushl   $SYSC_RAND          # 系统调用号
     call    ring3_syscall
     addl    $8, %esp
