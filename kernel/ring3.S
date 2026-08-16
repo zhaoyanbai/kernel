@@ -27,23 +27,35 @@ ring3_entry:
     nop
     nop
 
-    pushl   $0                  # 模拟一个内核不需要的参数1
-    pushl   $SYSC_TEST
+    pushl   $5      #参数5
+    pushl   $4      #参数4
+    pushl   $3      #参数3
+    pushl   $2      #参数2
+    pushl   $1      #参数1
+    pushl   $SYSC_TEST          # 系统调用号
     call    ring3_syscall
-    addl    $8, %esp
+    addl    $0x18, %esp
 
-    pushl   $0                  # 模拟一个内核不需要的参数1
+    pushl   $5      #参数5
+    pushl   $4      #参数4
+    pushl   $3      #参数3
+    pushl   $2      #参数2
+    pushl   $1      #参数1
     pushl   $SYSC_RAND          # 系统调用号
     call    ring3_syscall
-    addl    $8, %esp
+    addl    $0x18, %esp
 
 
     movl    %eax, %ecx
     andl    $0x000000FF, %ecx
-    pushl   %ecx                # 参数1
+    pushl   $5      #参数5
+    pushl   $4      #参数4
+    pushl   $3      #参数3
+    pushl   $2      #参数2
+    pushl   %ecx    #参数1
     pushl   $SYSC_WAIT          # 系统调用号
     call    ring3_syscall
-    addl    $8, %esp
+    addl    $0x18, %esp
 
 
     # 纯消耗CPU时间
@@ -56,38 +68,55 @@ ring3_entry:
     nop
     jmp ring3_entry
 
-# 传入: 系统调用号, 参数1
+#
+# System V ABI
+# 参数: 从右向左压栈，调用者清栈
+# 返回值: eax; 64位在edx:eax
+# 调用者保存: eax ecx edx
+# 被调用者保存: ebx esi edi ebp esp
+#
+
+#
+# 输入:
+#   eax: 系统调用号
+#   ebx: 参数1
+#   ecx: 参数2
+#   edx: 参数3
+#   esi: 参数4
+#   edi: 参数5
+# 输出:
+#   eax: 返回码
+#
 ring3_syscall:
+    # 实现一个五个参数的完全版本，后续在lib/syscall.c里参数实现
+    pushl   %ebx
+    pushl   %esi
+    pushl   %edi
     pushl   %ebp
+
+    # sysexit页 ret 时会得到的返回地址
+    pushl   $1f
+
     movl    %esp, %ebp
 
-    pushl   %ebx # 用于保存参数1
-    pushl   %edi # 用于保存sysexit后返回用户态的地址
-                 # ebp用于保存sysexit后的用户态栈，不过已经保存了，这里不用再保存
+    # 根据栈内容，准备寄存器参数
+    movl    0x18(%esp), %eax
+    movl    0x1C(%esp), %ebx
+    movl    0x20(%esp), %ecx
+    movl    0x24(%esp), %edx
+    movl    0x28(%esp), %esi
+    movl    0x2C(%esp), %edi
 
-    movl    0x08(%ebp), %eax # 系统调用号
-    movl    0x0C(%ebp), %ebx # 参数1
-
-    # 获取call get_eip后的地址
-    call    get_eip
-get_eip:
-    # 这里popl取得的就是上一个call指令自动压入栈中的地址
-    # 这个地址就是当前指令的地址
-    popl    %edi
-
-    # 算出sysenter后的地地址
-    addl    $8, %edi
-
-    # 设置sysexit返回用户态后的栈位置
-    movl    %esp, %ebp
-
+    # 系统调用能保证除 eax ecx edx 外的寄存器都不会被修改
     sysenter
-
-    # 从栈中恢复保存的易失寄存器
-    popl    %edi
-    popl    %ebx
+1:
+    # 此处不用恢复esp
+    # 因为esp已经通过ebp传进系统调用
+    # 系统调用返回前已经根据ebp设置好了esp
 
     #
     popl    %ebp
-
+    popl    %edi
+    popl    %esi
+    popl    %ebx
     ret

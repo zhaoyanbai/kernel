@@ -101,6 +101,10 @@ void init_paging() {
         init_pgd[i] = 0;
     }
 
+    // paging for user space
+    extern void sysexit();
+    set_page_shared(sysexit);
+
 #if 0
     // 接下来为显存建立页映射
     unsigned long vram_phys_addr = system.vbe_phys_addr;
@@ -119,10 +123,6 @@ void init_paging() {
             vram_phys_addr += PAGE_SIZE;
         }
     }
-
-    // paging for user space
-    extern void sysexit();
-    set_page_shared(sysexit);
 
     set_cr3(va2pa(init_pgd));
 
