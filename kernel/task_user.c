@@ -32,13 +32,13 @@ void user_task_entry() {
     task_reset_priority(TASK_PRIORITY_LEVEL_USER + 9);
 
     // ring3只占用一个page，页的起始位置放的是代码，页的末尾当栈用
-    // ring3的地址直接是物理地址
-    extern uint8_t ring3_page_begin;
+    extern uint8_t ring3_page_begin[];
+    extern uint8_t ring3_lma[];
+    extern uint32_t ring3_text_size[];
 
-    paddr_t ring3_page_addr = (paddr_t)&ring3_page_begin;  // 不在内核空间的物理地址
-    // paddr_t ring3_stack_top = ring3_page_addr + PAGE_SIZE;
+    paddr_t ring3_page_addr = (paddr_t)ring3_lma;  // 不在内核空间的物理地址
 
-    vaddr_t ring3_page_vaddr = 0x08000000;  // 指定的ring3的虚拟地址
+    vaddr_t ring3_page_vaddr = (vaddr_t)ring3_page_begin;
     vaddr_t ring3_stack_top_vaddr = PAGE_OFFSET - 0x100000;
 
     page_map(ring3_page_vaddr, ring3_page_addr, PAGE_P | PAGE_US);
@@ -48,12 +48,16 @@ void user_task_entry() {
 
     {
         // 在ring3_page里非代码的地方插入特征值方便调试
-        extern uint8_t ring3_text_end;
-        uint32_t ring3_text_size = (&ring3_text_end) - (&ring3_page_begin);
-        for (uint32_t i = ring3_text_size; i < PAGE_SIZE; i++) {
+        for (uint32_t i = (uint32_t)ring3_text_size; i < PAGE_SIZE; i++) {
             ((uint8_t*)(pa2va(ring3_page_addr)))[i] = 0xCC;
         }
     }
+
+    asm volatile(
+        "mov %%ax, %%ds;"
+        "mov %%ax, %%es;"
+        "mov %%ax, %%fs;"
+        "mov %%ax, %%gs;" ::"a"(SELECTOR_USER_DS));
 
     asm volatile("sysexit;" ::"d"(ring3_page_vaddr), "c"(ring3_stack_top_vaddr));
 }

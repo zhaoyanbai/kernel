@@ -62,13 +62,13 @@ syscall_entry:
  .normal_syscall:
     call    *sysc_handler_table(,%eax,4)
 
-// normal_syscall_exit:
-//     leal    sysexit, %edx
-//     movl    %edx, PT_REGS_EDX(%esp)
-//     movl    PT_REGS_EBP(%esp), %edx
-//     movl    %edx, PT_REGS_ECX(%esp)
+normal_syscall_exit:
+    leal    sysexit, %edx
+    movl    %edx, PT_REGS_EDX(%esp)
+    movl    PT_REGS_EBP(%esp), %edx
+    movl    %edx, PT_REGS_ECX(%esp)
 
-//syscall_exit:
+syscall_exit:
 
     // 保存返回值
     movl    %eax, PT_REGS_EAX(%esp)
@@ -80,13 +80,7 @@ syscall_entry:
 
     // TODO 应该要检查一下这两个返回参数
 
-    // 返回用户态的eip
-    // sysexit指令从edx中恢复用户态eip
-    movl %edi, %edx
 
-    // 在系统调用前,用户态的esp保存在ebp中
-    // sysexit指令从ecx中恢复用户态esp
-    movl    %ebp, %ecx
 
     sysexit
 
@@ -119,7 +113,7 @@ ret_from_fork_krnl:
 .section .sysexit
 .align 0x1000
 sysexit:
-    popl    %ebp;
-    popl    %edx;
-    popl    %ecx;
+    nop
+    nop
+    nop
     ret

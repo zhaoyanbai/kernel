@@ -14,6 +14,12 @@
  *--------------------------------------------------------------------------
  */
 
+ /* VMA = Virtual Memory Address */
+ /* LMA = Load Memory Address */
+ /* ADDR(section): 计算该节的 VMA */
+ /* LOADADDR(section): 计算该节的 LMA */
+ /* SIZEOF(section): 计算该节的大小 */
+
 OUTPUT_FORMAT("elf32-i386")
 ENTRY(kernel_entry)
 
@@ -53,19 +59,22 @@ SECTIONS
     eunpaged_rodata = .;
 
     . = ALIGN(0x1000);
-    ring3_page_begin = .;
-    .ring3 :
+    ring3_lma = .;
+    .ring3 0x08000000 : AT(ring3_lma)
     {
+        ring3_page_begin = .;
         *(.ring3.entry)
         . = ALIGN(0x100);
-        ring3_text_end = .;
+        ring3_text_size = SIZEOF(.ring3);
+        ring3_page_end = .;
     }
-    . = ALIGN(0x1000);
-    ring3_page_end = .;
+    /* 恢复LMA */
+    /* 带绝对 VMA 的节写完后 . 不会自动接上，而是变成 该节VMA+SIZEOF(该节名) */
+    . = ring3_lma + SIZEOF(.ring3);
 
+    . = ALIGN(0x1000);
     /* . = kernel_begin; */
     . += kernel_virtual_addr_start;
-    . = ALIGN(0x1000);
     .text : AT(ADDR(.text)-kernel_virtual_addr_start) ALIGN(0x1000)
     {
         code = .;
