@@ -29,7 +29,7 @@ page_t* get_partial(kmem_cache_t* cache, gfp_t gfpflags) {
 
 // 从伙伴系统批发页，并将之初始化成一个链表
 page_t* new_slub(kmem_cache_t* cache, gfp_t gfpflags) {
-    page_t* page = alloc_pages(gfpflags, cache->order);
+    page_t* page = alloc_pages(cache->order, gfpflags);
     if (0 == page) {
         return 0;
     }

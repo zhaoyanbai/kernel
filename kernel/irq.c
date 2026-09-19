@@ -206,7 +206,7 @@ int request_irq(unsigned int irq, void (*handler)(unsigned int, pt_regs_t*, void
         p = p->next;
     }
 
-    p = (irq_action_t*)kmalloc(sizeof(irq_action_t), 0);
+    p = (irq_action_t*)kmalloc(sizeof(irq_action_t), GFP_ATOMIC);
     if (p == NULL) {
         return -ENOMEM;
     }
@@ -232,7 +232,7 @@ void add_irq_bh_handler(void (*handler)(), void* arg) {
     // 本函数不用考虑临界问题
 
     irq_bh_action_t* p;
-    p = (irq_bh_action_t*)kmalloc(sizeof(irq_bh_action_t), 0);
+    p = (irq_bh_action_t*)kmalloc(sizeof(irq_bh_action_t), GFP_ATOMIC);
     assert(p != NULL);
 
     p->handler = handler;

@@ -373,7 +373,7 @@ void tmp_ide_disk_read(dev_t dev, uint32_t sect_nr, uint32_t count, char* buf) {
 // lba_partition_table: 扩展分区的真实偏移地址
 void read_partition_table(ide_drive_t* drv, uint32_t mbr_ext_offset, uint64_t lba_partition_table, int depth) {
     // disk_request_t r;
-    char* sect = kmalloc(SECT_SIZE, 0);
+    char* sect = kmalloc(SECT_SIZE, GFP_REWRITE);
     memset(sect, 0xAA, SECT_SIZE);
 #if 1
     // partid == 0 代表整块硬盘

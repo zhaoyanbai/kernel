@@ -92,7 +92,7 @@ void kmem_cache_free(kmem_cache_t* cache, void* addr) {
 }
 
 kmem_cache_t* kmem_cache_create(const char* name, size_t size, size_t align) {
-    kmem_cache_t* cache = kmalloc(sizeof(kmem_cache_t), 0);
+    kmem_cache_t* cache = kmalloc(sizeof(kmem_cache_t), GFP_REWRITE);
     if (cache == 0) {
         return 0;
     }

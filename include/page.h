@@ -134,8 +134,6 @@ static inline pde_t* get_pgd() {
     return (pde_t*)pa2va((get_cr3() & PAGE_MASK));
 }
 
-typedef unsigned int gfp_t;
-
 enum page_flags {
     PG_Private,
 };
@@ -207,10 +205,17 @@ typedef struct free_area {
     list_head_t free_list;
 } free_area_t;
 
-page_t* alloc_pages(unsigned int gfp_mask, unsigned int order);
+typedef enum {
+    GFP_NONE = 0,
+    GFP_ATOMIC = 1,
+    GFP_KERNEL = 2,
+    GFP_REWRITE = 3, // 后续需要重新处理的接口,暂时写个值在这里提醒
+} gfp_t;
+
+page_t* alloc_pages(unsigned int order, gfp_t gfpflags);
 void free_pages(unsigned long addr);
 
-#define alloc_one_page(gfp_mask) alloc_pages(gfp_mask, 0)
+#define alloc_one_page(gfpflags) alloc_pages(0, gfpflags)
 
 struct kmem_cache {
     const char* name;
