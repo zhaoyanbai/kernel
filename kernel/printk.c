@@ -16,7 +16,7 @@
  */
 
 #include <irq.h>
-#include <system.h>
+#include <mm.h>
 #include <tty.h>
 #include <vt.h>
 #include <console.h>

@@ -14,6 +14,7 @@
  *--------------------------------------------------------------------------
  */
 #include <io.h>
+#include <mm.h>
 #include <pci.h>
 #include <printk.h>
 #include <system.h>
@@ -68,7 +69,7 @@ void scan_pci_bus(int bus) {
                 continue;
             }
 
-            pci_device_t* pci = kmalloc(sizeof(pci_device_t), 0);
+            pci_device_t* pci = kmalloc(sizeof(pci_device_t), GFP_ATOMIC);
             if (0 == pci) {
                 printk("no space to alloc for pci_device_t\n");
                 continue;

@@ -22,6 +22,10 @@ kmem_cache_t* kmem_cache_create(const char* name, size_t size, size_t align);
 void* kmem_cache_alloc(kmem_cache_t* cache, gfp_t gfpflags);
 void* kmem_cache_zalloc(kmem_cache_t* cache, gfp_t gfpflags);
 
+void* kmalloc(size_t size, gfp_t gfpflags);
+void* kzalloc(size_t size, gfp_t gfpflags);
+void kfree(void* addr);
+
 #define VM_READ 0x00000001
 #define VM_WRITE 0x00000002
 #define VM_EXEC 0x00000004

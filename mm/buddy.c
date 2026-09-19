@@ -117,7 +117,7 @@ found:
     return page;
 }
 
-page_t* alloc_pages(unsigned int gfp_mask, unsigned int order) {
+page_t* alloc_pages(unsigned int order, gfp_t gfpflags) {
     // gfp_mask
     // ...
 

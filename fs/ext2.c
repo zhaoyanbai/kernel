@@ -194,7 +194,7 @@ unsigned int ext2_search_inpath(const char* path) {
     assert(strlen(path) > 0);
     assert(path[0] == '/');
 
-    ext2_inode_t* inode = kmalloc(sizeof(ext2_inode_t), 0);
+    ext2_inode_t* inode = kmalloc(sizeof(ext2_inode_t), GFP_REWRITE);
     assert(inode != 0);
     memcpy(inode, &ext2_root_inode, sizeof(ext2_inode_t));
 
@@ -231,7 +231,7 @@ unsigned int ext2_search_inpath(const char* path) {
 void ext2_setup_fs() {
     memset(&ext2_fs, 0, sizeof(ext2_fs));
 
-    char* buf = kmalloc(EXT2_BLOCK_SIZE, 0);
+    char* buf = kmalloc(EXT2_BLOCK_SIZE, GFP_REWRITE);
     if (buf == 0) {
         panic("out of memory");
     }

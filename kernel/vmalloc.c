@@ -13,6 +13,7 @@
 #include <page.h>
 #include <assert.h>
 #include <string.h>
+#include <mm.h>
 
 static vm_struct_t* vm_area_list = NULL;
 

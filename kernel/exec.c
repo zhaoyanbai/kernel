@@ -85,7 +85,8 @@ int sysc_exec(const char* path, char* const argv[]) {
         unsigned int pgcnt = (mmsz + PAGE_SIZE - 1) / PAGE_SIZE;
         unsigned int blkcnt = (filesz + EXT2_BLOCK_SIZE - 1) / EXT2_BLOCK_SIZE;
 
-        void* buf = kmalloc(pgcnt * PAGE_SIZE, PAGE_SIZE);
+        // void* buf = kmalloc(pgcnt * PAGE_SIZE);
+        void *buf = page2va(alloc_pages(pgcnt, GFP_KERNEL));
         assert(PAGE_ALIGN(buf) == (unsigned long)buf);
         assert(buf != 0);
 

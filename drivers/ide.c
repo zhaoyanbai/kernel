@@ -237,7 +237,7 @@ void ide_pci_init(pci_device_t* pci) {
 
 // void ide_debug() {
 //     unsigned int nsect = 1;
-//     char *buf = kmalloc(1 * SECT_SIZE, 0);
+//     char *buf = kmalloc(1 * SECT_SIZE);
 //     if (buf == 0) panic("out of memory");
 
 //     ide_do_read(0, nsect, buf);
