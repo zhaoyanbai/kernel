@@ -161,4 +161,8 @@ void setup_kernel() {
 
     void dump_fixmap();
     dump_fixmap();
+
+    uint32_t read_cr4();
+    uint32_t cr4 = read_cr4();
+    printk("CR4: %08x\n", cr4);
 }

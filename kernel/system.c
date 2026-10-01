@@ -214,6 +214,26 @@ void set_tss() {
     asm("ltr %%ax" ::"a"((INDEX_TSS << 3) + 3));
 }
 
+uint32_t read_cr3() {
+    uint32_t cr3 = 0;
+    asm volatile("movl %%cr3, %0" : "=r"(cr3));
+    return cr3;
+}
+
+void write_cr3(uint32_t cr3) {
+    asm volatile("movl %0, %%cr3" ::"r"(cr3));
+}
+
+uint32_t read_cr4() {
+    uint32_t cr4 = 0;
+    asm volatile("movl %%cr4, %0" : "=r"(cr4));
+    return cr4;
+}
+
+void write_cr4(uint32_t cr4) {
+    asm volatile("movl %0, %%cr4" ::"r"(cr4));
+}
+
 int sysc_reboot(int mode) {
     void do_reboot();
     void do_poweroff();

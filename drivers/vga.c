@@ -11,6 +11,7 @@
 #include <vga.h>
 #include <io.h>
 #include <irq.h>
+#include <page.h>
 
 static uint16_t* vga_vram_base_vaddr = (uint16_t*)pa2va(vga_vram_base_paddr);
 

@@ -226,7 +226,7 @@ void init_task_entry() {
 
     printk("RING3 ENTRY %x page %x pgd inx %u pt inx %u\n", mod_start, text_at, pgd_index, pt_index);
 
-    set_cr3(current->cr3);
+    write_cr3(current->cr3);
 
     asm("sysexit;" ::"d"(mod_start), "c"(mod_start + PAGE_SIZE - 4));
 #endif

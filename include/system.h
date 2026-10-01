@@ -18,7 +18,6 @@
 #define _SYSTEM_H
 
 #include <assert.h>
-#include <page.h>
 #include <kdef.h>
 
 #define PT_REGS_EBX 0

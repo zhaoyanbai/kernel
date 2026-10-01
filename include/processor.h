@@ -221,4 +221,10 @@ extern tss_t tss;
 #define CR4_OSXMMEEXCPT (1 << 10)  // R/W  Operating System Unmasked Exception Support
 #define CR4_OSXSAVE (1 << 18)      // R/W XSAVE and Processor Extended States Enable Bit
 
+
+uint32_t read_cr3();
+uint32_t read_cr4();
+void write_cr3(uint32_t cr3);
+void write_cr4(uint32_t cr4);
+
 #endif  //_DESCRIPTOR_H

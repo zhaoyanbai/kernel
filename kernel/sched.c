@@ -39,7 +39,7 @@ pid_t get_next_pid() {
 }
 
 void load_cr3(task_t* tsk) {
-    set_cr3(tsk->cr3);
+    write_cr3(tsk->cr3);
 }
 
 extern pde_t __initdata init_pgd[PDECNT_PER_PAGE] __attribute__((__aligned__(PAGE_SIZE)));
@@ -220,7 +220,7 @@ task_t* alloc_task_t() {
 }
 
 void switch_to() {
-    set_cr3(current->cr3);
+    write_cr3(current->cr3);
     tss.esp0 = current->esp0;
 }
 
