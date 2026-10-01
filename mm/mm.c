@@ -47,6 +47,11 @@ void init_paging() {
     pte_t* pg_table = 0;
     void* alloc_from_bootmem(unsigned long size, char* title);
 
+    // 打开CR4的 PAGE GLOBAL 功能
+    uint32_t cr4 = read_cr4();
+    cr4 |= CR4_PGE;
+    write_cr4(cr4);
+
     // 在multiboot.S是已经初始化了BOOT_INIT_PAGETBL_CNT个页
     // 这里接着初始化剩余的页
     // 最大限制内存1G
@@ -64,7 +69,7 @@ void init_paging() {
             init_pgd[get_npde(page_addr)] = (pde_t)((unsigned long)(pg_table) | PAGE_P | PAGE_WR);
         }
 
-        pg_table[npte] = (pte_t)(page_addr | PAGE_P | PAGE_WR);
+        pg_table[npte] = (pte_t)(page_addr | PAGE_P | PAGE_WR | PAGE_G);
     }
 
     // paging for kernel space
@@ -124,7 +129,7 @@ void init_paging() {
         }
     }
 
-    set_cr3(va2pa(init_pgd));
+    write_cr3(va2pa(init_pgd));
 
     // 测试显存
     for (int i = 0; i < system.x_resolution * (system.y_resolution - 32); i++) {
