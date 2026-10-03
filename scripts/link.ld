@@ -64,6 +64,7 @@ SECTIONS
     {
         ring3_page_begin = .;
         *(.ring3.entry)
+        *(.ring3.text)
         . = ALIGN(0x100);
         ring3_text_size = SIZEOF(.ring3);
         ring3_page_end = .;
@@ -71,6 +72,14 @@ SECTIONS
     /* 恢复LMA */
     /* 带绝对 VMA 的节写完后 . 不会自动接上，而是变成 该节VMA+SIZEOF(该节名) */
     . = ring3_lma + SIZEOF(.ring3);
+
+    . = ALIGN(0x1000);
+    ring3_data_lma = .;
+    .ring3_data 0x10000000 : AT(ring3_data_lma)
+    {
+        *(.ring3.data)
+    }
+    . = ring3_data_lma + SIZEOF(.ring3_data);
 
     . = ALIGN(0x1000);
     /* . = kernel_begin; */

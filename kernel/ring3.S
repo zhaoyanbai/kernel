@@ -10,6 +10,8 @@
 #define ASM
 #include <syscall.h>
 
+.extern ring3_c_text
+
 # a allocatable 可分配，表示这个节在程序运行时需要加载到内存中
 # x executable  可执行，表示这个节包含可执行的代码
 # w writable    可写，通常用于数据节
@@ -56,6 +58,9 @@ ring3_entry:
     pushl   $SYSC_WAIT          # 系统调用号
     call    ring3_syscall
     addl    $0x18, %esp
+
+
+    call    ring3_c_text
 
 
     # 纯消耗CPU时间

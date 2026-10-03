@@ -61,3 +61,10 @@ void user_task_entry() {
 
     asm volatile("sysexit;" ::"d"(ring3_page_vaddr), "c"(ring3_stack_top_vaddr));
 }
+
+// 用于触发#PF以验证COW
+__attribute__((__section__(".ring3.data"))) uint32_t ring3_x = 0;
+__attribute__((__section__(".ring3.text"))) void ring3_c_text() {
+    asm("nop;nop;nop;nop;nop;nop;nop;nop;");
+    ring3_x += 1;
+}
