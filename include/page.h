@@ -36,7 +36,7 @@
 #define PAGE_P 0x001   // 在内存中
 #define PAGE_WR 0x002  // 表示可读写
 #define PAGE_US 0x004  // 用户级
-#define PAGE_G 0x100 // 全局页表项
+#define PAGE_G 0x100   // 全局页表项
 
 #define PAGE_SHIFT (12)
 #define PAGE_SIZE (1UL << PAGE_SHIFT)
@@ -47,10 +47,12 @@
 #define PAGE_PTE_CNT 1024
 
 // P：  有效位
-//      0 表示当前表项无效，访问该虚拟地址直接#PF缺页异常，CPU不翻译，也不看其它位，此时余下31位CPU完全不管，内核可以随便用。
+//      0
+//      表示当前表项无效，访问该虚拟地址直接#PF缺页异常，CPU不翻译，也不看其它位，此时余下31位CPU完全不管，内核可以随便用。
 //      修改必须刷对应TLB
 // R/W: 0 表示只读写就#PF; 1表示可读写。PDE和PTE要同时看，逻辑与。比如PDE.RW=0 && PTE.RW=1 最终还是只读。
-//      另外还需要注意CR0.WP，如果CR0.WP=0(默认)，那么只限制用户态，内核写只读页也不缺页; CR0.WP=1，那么内核写只读页也#PF。
+//      另外还需要注意CR0.WP，如果CR0.WP=0(默认)，那么只限制用户态，内核写只读页也不缺页;
+//      CR0.WP=1，那么内核写只读页也#PF。
 // U/S: 0 表示只能0、1、2特权级可访问; 3 表示只有特权级程序可访问。
 //      同样是PDE与PTE按逻辑与。
 // PWT: 0 表示写进缓存，迟早刷回内存; 1 表示写缓存同时写内存，慢但内存总是新的。
@@ -64,9 +66,9 @@
 // D:   脏位。0表示该页未写过; 1表示该页被写过。只有PTE用这位，PDE这个位忽略或保留。
 //      用于换出页面时判断要不要写回磁盘。D=0的页换出可直接丢弃，磁盘上已经有相同内容; D=1才需要写回。
 //      清D位也要刷新TLB。
-// PS:  PAGE SIZE. 只存在于页目录表项。在CR4中的PSE打开的情况下，0表示这是4KB页，指向一个页表。1表示这是4MB大页，直接指向物理页。
-// PAT: PAGE ATTRIBUTE TABLE. 只存在于页表项。 Pentium III后引入的机制。
-// G:   GLOBAL 全局位
+// PS:  PAGE SIZE.
+// 只存在于页目录表项。在CR4中的PSE打开的情况下，0表示这是4KB页，指向一个页表。1表示这是4MB大页，直接指向物理页。 PAT:
+// PAGE ATTRIBUTE TABLE. 只存在于页表项。 Pentium III后引入的机制。 G:   GLOBAL 全局位
 //      4K分页下PDE.G被忽略，如果用4MB大页映射内核空间，PDE.G有效
 //      内核空间映射在所有进程页表里都一样，设为全局，切换进程不刷新这些TLB项，减少内核映射的TLB miss。
 //      用户页不能随便设G，会跨进程泄露TLB翻译。改G相关属性也需要注意TLB一致性。
@@ -76,7 +78,6 @@
 //          2. 页类型标记: 匿名页、文件页、设备页、共享页
 //          3. 写时复制里记录"这是共享只读页"
 //          4. 页面锁标记，禁止换出
-
 
 // x
 
@@ -151,7 +152,6 @@ typedef unsigned long pte_t;
 #define PFN_DW(addr) ((addr) >> PAGE_SHIFT)
 
 #define MAX_ORDER (11)
-
 
 static inline pde_t* get_pgd() {
     return (pde_t*)pa2va((read_cr3() & PAGE_MASK));
@@ -232,7 +232,7 @@ typedef enum {
     GFP_NONE = 0,
     GFP_ATOMIC = 1,
     GFP_KERNEL = 2,
-    GFP_REWRITE = 3, // 后续需要重新处理的接口,暂时写个值在这里提醒
+    GFP_REWRITE = 3,  // 后续需要重新处理的接口,暂时写个值在这里提醒
 } gfp_t;
 
 page_t* alloc_pages(unsigned int order, gfp_t gfpflags);

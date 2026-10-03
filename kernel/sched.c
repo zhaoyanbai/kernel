@@ -213,7 +213,7 @@ void setup_tasks() {
     }
 }
 
-task_t* alloc_task_t() {
+task_t* alloc_task() {
     task_t* task;
     task = (task_t*)kmem_cache_alloc(task_t_cache, 0);
     return task;

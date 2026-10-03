@@ -100,7 +100,7 @@ typedef union task_union {
     unsigned char stack[TASK_SIZE];
 } task_t;
 
-task_t* alloc_task_t();
+task_t* alloc_task();
 
 static inline task_t* get_current() {
     task_t* tsk;
