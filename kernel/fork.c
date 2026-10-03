@@ -16,9 +16,11 @@
 extern pid_t get_next_pid();
 extern list_head_t all_tasks;
 
+void copy_page_tables(pde_t* pds_vaddr, pde_t* pdd_vaddr);
+
 int do_fork(pt_regs_t* regs, unsigned long flags) {
     task_t* tsk;
-    tsk = alloc_task_t();
+    tsk = alloc_task();
 
     printd("fork task %08x flags %08x\n", tsk, flags);
     if (tsk == NULL) {
@@ -34,10 +36,10 @@ int do_fork(pt_regs_t* regs, unsigned long flags) {
     task_init_lists(tsk);
     task_init_stats(tsk);
 
-    unsigned long iflags;
-    irq_save(iflags);
+    unsigned long eflags;
+    irq_save(eflags);
     list_add(&tsk->list, &all_tasks);
-    irq_restore(iflags);
+    irq_restore(eflags);
 
     tsk->cr3 = (uint32_t)page2pa(alloc_one_page(0));
     assert(tsk->cr3 != 0);
@@ -47,21 +49,9 @@ int do_fork(pt_regs_t* regs, unsigned long flags) {
 
     memcpy((void*)pa2va(tsk->cr3), (void*)pa2va(current->cr3), PAGE_SIZE);
 
-    for (int i = 0; i < PAGE_PDE_CNT; ++i) {
-        // unsigned long spde = (unsigned long)pde_src[i];
-        // unsigned long dpde = 0;
-
-        if (i >= get_npde(PAGE_OFFSET)) {
-            pde_dst[i] = pde_src[i];
-            continue;
-        }
-
-        if (pde_src[i] == 0) {
-            continue;
-        }
-
-        pde_dst[i] = pde_src[i] & (~PDE_RW);
-    }
+    irq_save(eflags);
+    copy_page_tables(pde_src, pde_dst);
+    irq_restore(eflags);
 
     pt_regs_t* child_regs = ((pt_regs_t*)(TASK_SIZE + (unsigned long)tsk)) - 1;
 
@@ -103,6 +93,25 @@ int do_fork(pt_regs_t* regs, unsigned long flags) {
 
 fork_child:
     return 0;
+}
+
+void copy_page_tables(pde_t* pds_vaddr, pde_t* pdd_vaddr) {
+    assert(pds_vaddr != NULL);
+    assert(pdd_vaddr != NULL);
+    assert(PAGE_ALIGN(pds_vaddr) == (vaddr_t)pds_vaddr);
+    assert(PAGE_ALIGN(pdd_vaddr) == (vaddr_t)pdd_vaddr);
+    assert((vaddr_t)pds_vaddr >= KERNEL_VADDR_BASE);
+    assert((vaddr_t)pdd_vaddr >= KERNEL_VADDR_BASE);
+
+    const int knpde = get_npde(KERNEL_VADDR_BASE);
+    for (int i = 0; i < PAGE_PDE_CNT; i++) {
+        if (i < knpde) {
+            // 把所有可写页设置为只读
+            pds_vaddr[i] = pds_vaddr[i] & (~PDE_RW);
+        }
+
+        pdd_vaddr[i] = pds_vaddr[i];
+    }
 }
 
 int sysc_fork(pt_regs_t regs) {

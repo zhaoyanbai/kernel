@@ -49,9 +49,9 @@ typedef long int32_t;
 typedef unsigned long long uint64_t;
 typedef long long int64_t;
 
-typedef uint32_t uintptr_t;
-typedef uint32_t paddr_t;
-typedef uint32_t vaddr_t;
+typedef unsigned long uintptr_t;
+typedef unsigned long paddr_t;
+typedef unsigned long vaddr_t;
 
 typedef int64_t loff_t;
 typedef int32_t off_t;

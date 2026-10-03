@@ -16,7 +16,6 @@
  *--------------------------------------------------------------------------
  */
 
-#include <sched.h>
 #include <system.h>
 
 #define DIE_MSG()                                                                                          \
@@ -69,41 +68,9 @@ void doGeneralProtection(pt_regs_t regs) {
     DIE_MSG();
 }
 
-void do_no_page(void*);
-void do_wp_page(void*);
 void do_page_fault(pt_regs_t regs) {
-#if 0
-US RW  P - Description
-0  0  0 - Supervisory process tried to read a non-present page entry
-0  0  1 - Supervisory process tried to read a page and caused a protection fault
-0  1  0 - Supervisory process tried to write to a non-present page entry
-0  1  1 - Supervisory process tried to write a page and caused a protection fault
-1  0  0 - User process tried to read a non-present page entry
-1  0  1 - User process tried to read a page and caused a protection fault
-1  1  0 - User process tried to write to a non-present page entry
-1  1  1 - User process tried to write a page and caused a protection fault
-#endif
-#if 0
-    bit 0: 0 non-present page entry; 1 protection fault
-    bit 1: 0 read; 1 write
-    bit 2: 0 supervisor mode; 1 user mode
-#endif
-    // DIE_MSG();
-    void* addr;
-    u32 errcode = regs.errcode;
-
-    asm("movl %%cr2,%%eax" : "=a"(addr));
-
-    printk("do page fault errcode %x addr %08x [%08x] %s\n", errcode, addr, current, current->name);
-
-    // assert(errcode != 2 && errcode != 6);
-
-    printk("errcode %x addr %x\n", errcode, addr);
-    if ((errcode & PAGE_P) == 0) {
-        do_no_page(addr);
-    } else {
-        do_wp_page(addr);
-    }
+    void do_page_fault_handler(pt_regs_t);
+    do_page_fault_handler(regs);
 }
 
 void doCoprocError(pt_regs_t regs) {
