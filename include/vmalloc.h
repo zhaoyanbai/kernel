@@ -12,18 +12,19 @@
 #include <types.h>
 #include <kdef.h>
 
-#define VM_ALLOC 0x01
-#define VM_IOREMAP 0x02
+#define VMAP_ALLOC 0x01
+#define VMAP_IOREMAP 0x02
 
-typedef struct vm_struct {
+// virtual map region
+typedef struct vmap_region {
     vaddr_t vm_vaddr;
     size_t vm_size;
     paddr_t vm_paddr;
     uint32_t vm_flags;
-    struct vm_struct* vm_next;
-} vm_struct_t;
+    struct vmap_region* vm_next;
+} vmap_region_t;
 
-vm_struct_t* alloc_vm_area(size_t size, uint32_t flags);
-vm_struct_t* find_vm_area(vaddr_t vaddr);
+vmap_region_t* alloc_vmap_region(size_t size, uint32_t flags);
+vmap_region_t* find_vmap_region(vaddr_t vaddr);
 
-void free_vm_area(vm_struct_t* vm);
+void free_vmap_region(vmap_region_t* region);

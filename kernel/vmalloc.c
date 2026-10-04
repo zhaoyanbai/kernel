@@ -15,39 +15,41 @@
 #include <string.h>
 #include <mm.h>
 
-static vm_struct_t* vm_area_list = NULL;
+static vmap_region_t* vmap_region_list = NULL;
 
-vaddr_t vm_vaddr_base = VMALLOC_VADDR_BASE + (8 * 1024 * 1024);
-vaddr_t vm_vaddr_end = VMALLOC_VADDR_END;
+static const int vmap_guard_size = 4 * 1024 * 1024;  // 4MB
 
-vm_struct_t* alloc_vm_area(size_t size, uint32_t flags) {
+static const vaddr_t vmap_vaddr_base = VMALLOC_VADDR_BASE + vmap_guard_size;
+static const vaddr_t vmap_vaddr_end = VMALLOC_VADDR_END - vmap_guard_size;
+
+vmap_region_t* alloc_vmap_region(size_t size, uint32_t flags) {
     // assert size是页对齐
     assert(PAGE_DOWN(size) == size);
-    assert(vm_vaddr_base < vm_vaddr_end);
+    assert(vmap_vaddr_base < vmap_vaddr_end);
 
     size += PAGE_SIZE;  // 尾部添加一个空页
 
-    vaddr_t vm_area_gap_bgn = 0;
-    vaddr_t vm_area_gap_end = 0;
+    vaddr_t vmap_region_gap_bgn = 0;
+    vaddr_t vmap_region_gap_end = 0;
 
     uint32_t eflags;
     irq_save(eflags);
 
-    vm_struct_t* prev = NULL;
-    vm_struct_t* curt = vm_area_list;
+    vmap_region_t* prev = NULL;
+    vmap_region_t* curt = vmap_region_list;
 
     while (curt != NULL) {
-        assert(curt->vm_vaddr >= vm_vaddr_base);
-        assert(curt->vm_vaddr + curt->vm_size <= vm_vaddr_end);
+        assert(curt->vm_vaddr >= vmap_vaddr_base);
+        assert(curt->vm_vaddr + curt->vm_size <= vmap_vaddr_end);
 
         //
-        vm_area_gap_bgn = prev == NULL ? vm_vaddr_base : prev->vm_vaddr + prev->vm_size;
-        vm_area_gap_end = curt->vm_vaddr;
+        vmap_region_gap_bgn = prev == NULL ? vmap_vaddr_base : prev->vm_vaddr + prev->vm_size;
+        vmap_region_gap_end = curt->vm_vaddr;
 
-        assert(vm_area_gap_bgn <= vm_area_gap_end);
+        assert(vmap_region_gap_bgn <= vmap_region_gap_end);
 
         // 找到了
-        if (vm_area_gap_end - vm_area_gap_bgn >= size) {
+        if (vmap_region_gap_end - vmap_region_gap_bgn >= size) {
             break;
         }
 
@@ -57,56 +59,56 @@ vm_struct_t* alloc_vm_area(size_t size, uint32_t flags) {
 
     // 如果找到最后了也还没找到
     if (curt == NULL) {
-        vm_area_gap_bgn = prev == NULL ? vm_vaddr_base : prev->vm_vaddr + prev->vm_size;
-        vm_area_gap_end = vm_vaddr_end;
+        vmap_region_gap_bgn = prev == NULL ? vmap_vaddr_base : prev->vm_vaddr + prev->vm_size;
+        vmap_region_gap_end = vmap_vaddr_end;
 
-        assert(vm_area_gap_bgn <= vm_area_gap_end);
+        assert(vmap_region_gap_bgn <= vmap_region_gap_end);
 
-        if (vm_area_gap_end - vm_area_gap_bgn < size) {
+        if (vmap_region_gap_end - vmap_region_gap_bgn < size) {
             irq_restore(eflags);
             return NULL;
         }
     }
 
-    // 创建一人vm_struct
-    vm_struct_t* vm_area = kmalloc(sizeof(vm_struct_t), 0);
-    if (vm_area == NULL) {
+    // 创建一个vmap_region
+    vmap_region_t* vmap_region = kmalloc(sizeof(vmap_region_t), 0);
+    if (vmap_region == NULL) {
         irq_restore(eflags);
         return NULL;
     }
 
-    vm_area->vm_vaddr = vm_area_gap_bgn;
-    vm_area->vm_size = size;
-    vm_area->vm_flags = flags;
+    vmap_region->vm_vaddr = vmap_region_gap_bgn;
+    vmap_region->vm_size = size;
+    vmap_region->vm_flags = flags;
 
     // add to list
-    vm_area->vm_next = curt;
+    vmap_region->vm_next = curt;
     if (prev == NULL) {
-        vm_area_list = vm_area;
+        vmap_region_list = vmap_region;
     } else {
-        prev->vm_next = vm_area;
+        prev->vm_next = vmap_region;
     }
 
     irq_restore(eflags);
 
-    return vm_area;
+    return vmap_region;
 }
 
-vm_struct_t* find_vm_area(vaddr_t vaddr) {
+vmap_region_t* find_vmap_region(vaddr_t vaddr) {
     assert(PAGE_DOWN(vaddr) == vaddr);
-    assert(vaddr >= vm_vaddr_base);
-    assert(vaddr < vm_vaddr_end);
-    assert(vm_area_list != NULL);
+    assert(vaddr >= vmap_vaddr_base);
+    assert(vaddr < vmap_vaddr_end);
+    assert(vmap_region_list != NULL);
 
     uint32_t eflags;
     irq_save(eflags);
 
-    vm_struct_t* curt = vm_area_list;
+    vmap_region_t* curt = vmap_region_list;
 
     while (curt != NULL) {
         assert(curt->vm_size != 0);
-        assert(curt->vm_vaddr >= vm_vaddr_base);
-        assert(curt->vm_vaddr + curt->vm_size <= vm_vaddr_end);
+        assert(curt->vm_vaddr >= vmap_vaddr_base);
+        assert(curt->vm_vaddr + curt->vm_size <= vmap_vaddr_end);
 
         if (vaddr == curt->vm_vaddr) {
             irq_restore(eflags);
@@ -123,37 +125,37 @@ vm_struct_t* find_vm_area(vaddr_t vaddr) {
     return NULL;
 }
 
-void free_vm_area(vm_struct_t* vm_area) {
-    assert(vm_area != NULL);
-    assert(vm_area->vm_size != 0);
-    assert(vm_area->vm_size % PAGE_SIZE == 0);
-    assert(vm_area->vm_size >= (2 * PAGE_SIZE));
-    assert(vm_area->vm_vaddr >= vm_vaddr_base);
-    assert(vm_area->vm_vaddr + vm_area->vm_size <= vm_vaddr_end);
-    assert(vm_area_list != NULL);
+void free_vmap_region(vmap_region_t* region) {
+    assert(region != NULL);
+    assert(region->vm_size != 0);
+    assert(region->vm_size % PAGE_SIZE == 0);
+    assert(region->vm_size >= (2 * PAGE_SIZE));
+    assert(region->vm_vaddr >= vmap_vaddr_base);
+    assert(region->vm_vaddr + region->vm_size <= vmap_vaddr_end);
+    assert(vmap_region_list != NULL);
     // TODO
 
     uint32_t eflags;
     irq_save(eflags);
 
-    vm_struct_t* prev = NULL;
-    vm_struct_t* curt = vm_area_list;
+    vmap_region_t* prev = NULL;
+    vmap_region_t* curt = vmap_region_list;
 
     while (curt != NULL) {
-        if (curt == vm_area) {
+        if (curt == region) {
             if (prev == NULL) {
                 // 只有链表上仅有一个节点，且这个节点就是要删除的节点的情况下prev才可能为NULL
-                assert(vm_area_list == vm_area);
-                assert(vm_area->vm_next == NULL);
+                assert(vmap_region_list == region);
+                assert(region->vm_next == NULL);
 
                 //
-                vm_area_list = curt->vm_next;
+                vmap_region_list = curt->vm_next;
             } else {
                 prev->vm_next = curt->vm_next;
             }
 
-            // 释放前先清空vm_struct避免连续二次释放
-            memset(curt, 0, sizeof(vm_struct_t));
+            // 释放前先清空vmap_region避免连续二次释放
+            memset(curt, 0, sizeof(vmap_region_t));
 
             kfree(curt);
 
@@ -166,7 +168,7 @@ void free_vm_area(vm_struct_t* vm_area) {
     }
 
     // 不应该出现这种情况
-    assert(0 && "vm_area not found");
+    assert(0 && "vmap_region not found");
     irq_restore(eflags);
 }
 

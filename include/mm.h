@@ -32,11 +32,11 @@ void kfree(void* addr);
 #define VM_GROW_UP 0x10000000
 #define VM_GROW_DOWN 0x20000000
 
-typedef struct vm_area {
+typedef struct vma {
     uint32_t vm_bgn;
     uint32_t vm_end;
 
     uint32_t vm_flags;
 
-    struct vm_area* vm_next;
-} vm_area_t;
+    struct vma* vm_next;
+} vma_t;

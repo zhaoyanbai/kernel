@@ -79,7 +79,7 @@ typedef union task_union {
         path_t root;
         path_t pwd;
 
-        vm_area_t* vma_list;
+        vma_t* vma_list;
 
         list_head_t list;        // 所有进程串成一个链表
         list_head_t ready_list;  // 就绪队列

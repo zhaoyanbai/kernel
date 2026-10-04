@@ -31,30 +31,30 @@ void ioremap_page_range_clear(vaddr_t vaddr, size_t size) {
 void* ioremap(paddr_t phys_addr, size_t size) {
     size = PAGE_UP(size);
 
-    vm_struct_t* vm_area = alloc_vm_area(size, VM_IOREMAP);
-    if (!vm_area) {
+    vmap_region_t* vmap_region = alloc_vmap_region(size, VMAP_IOREMAP);
+    if (!vmap_region) {
         return NULL;
     }
 
     // 映射物理地址到虚拟地址
-    vm_area->vm_paddr = phys_addr;
-    vm_area->vm_flags |= VM_IOREMAP;
+    vmap_region->vm_paddr = phys_addr;
+    vmap_region->vm_flags |= VMAP_IOREMAP;
 
-    printk("ioremap: 0x%08x -> 0x%08x size %u\n", phys_addr, vm_area->vm_vaddr, vm_area->vm_size);
+    printk("ioremap: 0x%08x -> 0x%08x size %u\n", phys_addr, vmap_region->vm_vaddr, vmap_region->vm_size);
 
-    ioremap_page_range(vm_area->vm_vaddr, vm_area->vm_paddr, vm_area->vm_size);
+    ioremap_page_range(vmap_region->vm_vaddr, vmap_region->vm_paddr, vmap_region->vm_size);
 
-    return (void*)vm_area->vm_vaddr;
+    return (void*)vmap_region->vm_vaddr;
 }
 
 void iounmap(vaddr_t vaddr) {
-    vm_struct_t* vm_area = find_vm_area(vaddr);
-    assert(vm_area != NULL);
-    assert(vm_area->vm_flags & VM_IOREMAP);
+    vmap_region_t* vmap_region = find_vmap_region(vaddr);
+    assert(vmap_region != NULL);
+    assert(vmap_region->vm_flags & VMAP_IOREMAP);
 
-    printk("iounmap: 0x%08x size %u\n", vm_area->vm_vaddr, vm_area->vm_size);
+    printk("iounmap: 0x%08x size %u\n", vmap_region->vm_vaddr, vmap_region->vm_size);
 
-    free_vm_area(vm_area);
+    free_vmap_region(vmap_region);
 
-    ioremap_page_range_clear(vm_area->vm_vaddr, vm_area->vm_size);
+    ioremap_page_range_clear(vmap_region->vm_vaddr, vmap_region->vm_size);
 }

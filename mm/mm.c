@@ -198,12 +198,12 @@ void init_mm() {
     printk("memory init finished...\n");
     boot_delay(DEFAULT_BOOT_DELAY_TICKS);
 
-    g_vma_kmem_cache = kmem_cache_create("vma", sizeof(vm_area_t), 4);
+    g_vma_kmem_cache = kmem_cache_create("vma", sizeof(vma_t), 4);
     assert(g_vma_kmem_cache != NULL);
 }
 
-vm_area_t* vma_alloc() {
-    vm_area_t* vma = kmem_cache_alloc(g_vma_kmem_cache, 0);
+vma_t* vma_alloc() {
+    vma_t* vma = kmem_cache_alloc(g_vma_kmem_cache, 0);
     vma->vm_bgn = 0;
     vma->vm_end = 0;
     vma->vm_flags = 0;
@@ -211,12 +211,12 @@ vm_area_t* vma_alloc() {
     return vma;
 }
 
-void vma_insert(task_t* tsk, vm_area_t* vma_new) {
+void vma_insert(task_t* tsk, vma_t* vma_new) {
     //
-    vm_area_t** p = &tsk->vma_list;
+    vma_t** p = &tsk->vma_list;
 
     while (*p != NULL) {
-        vm_area_t* v = *p;
+        vma_t* v = *p;
 
         assert(v->vm_bgn < v->vm_end);
         assert(vma_new->vm_bgn < vma_new->vm_end);
@@ -234,10 +234,10 @@ void vma_insert(task_t* tsk, vm_area_t* vma_new) {
     *p = vma_new;
 }
 
-vm_area_t* vma_find(task_t* tsk, vm_area_t* vma, uint32_t addr) {
-    vm_area_t** p = &tsk->vma_list;
+vma_t* vma_find(task_t* tsk, vma_t* vma, uint32_t addr) {
+    vma_t** p = &tsk->vma_list;
     while (*p != NULL) {
-        vm_area_t* v = *p;
+        vma_t* v = *p;
 
         if (addr <= v->vm_end) {
             break;
